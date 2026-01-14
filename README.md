@@ -35,7 +35,7 @@ Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre l
 ```yaml
 homeassistant:
   packages: !include_dir_named packages
-
+```
 
 
 ## Contenu du package
