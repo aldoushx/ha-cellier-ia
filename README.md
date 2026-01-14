@@ -54,7 +54,7 @@ homeassistant:
 
 ## Installation
 
-1. Copier le fichier cellier_ia.yaml dans votre répertoire packages.
+1. Copier le fichier cellier_ia.yaml dans le répertoire packages avec file editor (ou ssh etc...).
 2. Copier le contenu du dashboard dashboard_cellier.yaml dans un nouveau dashboard.
 3. Redémarrer Home Assistant.
 4. Enjoy (avec modération ?)
