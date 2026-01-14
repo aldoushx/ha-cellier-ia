@@ -1,0 +1,732 @@
+views:
+  - type: masonry
+    path: home-2
+    title: Home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            entities:
+              - entity: input_text.vin_nom
+                name: Nom
+                icon: mdi:bottle-wine
+              - entity: input_text.vin_annee
+                name: Année
+                secondary_info: none
+                icon: mdi:calendar
+              - entity: input_text.vin_couleur
+                name: Couleur
+                icon: mdi:palette-swatch-variant
+              - entity: input_button.recherche_vin
+                secondary_info: state
+                name: Recherche
+                icon: mdi:magnify
+            title: Nouveau vin
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: vertical-stack
+            title: Gestion des Emplacements
+            cards:
+              - type: entities
+                entities:
+                  - entity: input_select.selection_vin_a_vider
+                    name: Choisir la bouteille à retirer
+                    icon: mdi:format-list-bulleted
+              - type: button
+                name: Vider cet emplacement
+                icon: mdi:trash-can
+                icon_height: 30px
+                style: |
+                  ha-card {
+                    background-color: var(--error-color);
+                    color: white;
+                  }
+                tap_action:
+                  action: call-service
+                  service: script.cellier_vider_emplacement_selectionne
+                  confirmation:
+                    text: >-
+                      Êtes-vous sûr de vouloir retirer ce vin ? Cette action est
+                      irréversible.
+              - type: markdown
+                title: 🔍 Détails du vin sélectionné
+                content: >
+                  {% set selection =
+                  states('input_select.selection_vin_a_vider').split(' | ')[0]
+                  %} {% if states(selection) != 'Vide' and
+                  selection.startswith('sensor.vin') %}
+                    **Vin :** {{ state_attr(selection, 'nom').valeur }} ({{ state_attr(selection, 'annee').valeur }})
+                    **Couleur :** {{ state_attr(selection, 'couleur').valeur }}
+                    **Appellation :** {{ state_attr(selection, 'appellation').valeur }}
+                    **Cépages :** {{ state_attr(selection, 'cepages').valeur }}
+                    **Note :** ⭐ {{ state_attr(selection, 'note_moyenne').valeur }} - {{ state_attr(selection, 'note_moyenne')['sites consultes'] }}
+                    **Prix moyen :** {{ state_attr(selection, 'prix_moyen').valeur }} - {{ state_attr(selection, 'prix_moyen')['magasins sources'] }}
+                    
+                    ---
+
+                    **Conseil de garde :** {% if state_attr(selection, 'garde_conseillee') != None %} {{ state_attr(selection, 'garde_conseillee').valeur }} {% else %} Non disponible {% endif %} 
+                    **À boire entre :** {% if state_attr(selection, 'fenetre_consommation') != None %} {{ state_attr(selection, 'fenetre_consommation').valeur }} {% else %} Non disponible {% endif %}
+                  {% else %}
+                    *Veuillez sélectionner un emplacement occupé pour voir les détails.*
+                  {% endif %}
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_1' %} **Emplacement 1** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_1
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_1
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_2' %} **Emplacement 2** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_2
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_2
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_3' %} **Emplacement 3** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_3
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_3
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_4' %} **Emplacement 4** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_4
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_4
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_5' %} **Emplacement 5** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_5
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_5
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_6' %} **Emplacement 6** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_6
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_6
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_7' %} **Emplacement 7** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_7
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_7
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_8' %} **Emplacement 8** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_8
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_8
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_9' %} **Emplacement 9** :  {% if states(s)
+              != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_9
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_9
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_10' %} **Emplacement 10** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_10
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_10
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_11' %} **Emplacement 11** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_11
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_11
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_12' %} **Emplacement 12** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_12
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_12
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_13' %} **Emplacement 13** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_13
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_13
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_14' %} **Emplacement 14** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_14
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_14
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_15' %} **Emplacement 15** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_15
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_15
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_16' %} **Emplacement 16** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_16
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_16
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_17' %} **Emplacement 17** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_17
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_17
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_18' %} **Emplacement 18** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_18
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_18
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_19' %} **Emplacement 19** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_19
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_19
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              {% set s = 'sensor.vin_20' %} **Emplacement 20** :  {% if
+              states(s) != 'Vide' %}
+                ### {{ state_attr(s, 'nom').valeur }}
+                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
+              {{ state_attr(s, 'appellation').valeur }}
+
+              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
+              'prix_moyen').valeur }}*
+
+                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
+                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+              {% else %}
+                <font color="gray">*Emplacement Libre*</font>
+              {% endif %}
+                
+          - type: entities
+            entities:
+              - entity: input_number.quantite_vin_20
+                name: Nombre de bouteilles
+                icon: mdi:counter
+            show_header_toggle: false
+            state_color: false
+            visibility:
+              - condition: state
+                entity: sensor.vin_20
+                state_not: Vide
+        grid_options:
+          columns: 6
+          rows: 8
