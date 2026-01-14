@@ -32,8 +32,9 @@ Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre l
 2. **Configuration des Dossiers** :
 * Le support des packages doit être activé dans votre fichier configuration.yaml :
 
+```yaml
 homeassistant:
-  packages:  !include_dir_named packages.
+  packages: !include_dir_named packages
 
 
 
