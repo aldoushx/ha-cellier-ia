@@ -5,8 +5,10 @@ Ce package pour Home Assistant est une première mouture qui permet de gérer un
 ## Fonctionnement général
 
 1. **Saisie** : L'utilisateur renseigne le nom, le millésime et la couleur.
-2. **Traitement Gemini** : Le Gemini analyse la saisie pour identifier précisément le vin, récupère les infos sur les sites spécialisés et renvoie un JSON.
+2. **Traitement Gemini** : Le Gemini analyse la saisie pour identifier précisément le vin, récupère les infos sur les sites spécialisés et renvoie un JSON. la réponse à la requête mais environ 15 secondes à revenir.
 3. **Dispatch** : Une automatisation traite le JSON et remplit les emplacements de la cave de manière intelligente (choisit les emplacements vide, ne duplique pas les vins). Une liste déroulante permet d'effacer les emplacements (il faut faire un RAZ avec ce bouton de chaque emplacement avant de les utiliser).
+
+Du fait du délai de traitement de la requête par Gemini, il se passe une quinzaine de secondes entre l'appui sur le bouton de recherche du vin et le remplissage de l'emplacement de la cave.
 
 ## Données stockées (Attributes)
 
