@@ -1365,6 +1365,37 @@ template:
             {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
             {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('prix moyen') }}
             {% else %} {{ state_attr('sensor.vin_20', 'prix_moyen') }} {% endif %}
+# --- CALCUL VALEUR TOTALE DE LA CAVE ---
+  - sensor:
+      - name: "Valeur Totale du Cellier"
+        unique_id: valeur_totale_cellier
+        unit_of_measurement: "€"
+        device_class: monetary
+        state: >
+          {% set sensors = [
+            'sensor.vin_1', 'sensor.vin_2', 'sensor.vin_3', 'sensor.vin_4', 'sensor.vin_5',
+            'sensor.vin_6', 'sensor.vin_7', 'sensor.vin_8', 'sensor.vin_9', 'sensor.vin_10',
+            'sensor.vin_11', 'sensor.vin_12', 'sensor.vin_13', 'sensor.vin_14', 'sensor.vin_15',
+            'sensor.vin_16', 'sensor.vin_17', 'sensor.vin_18', 'sensor.vin_19', 'sensor.vin_20'
+          ] %}
+          {% set ns = namespace(total=0) %}
+          {% for s in sensors %}
+            {# On vérifie si l'emplacement n'est pas vide #}
+            {% if states(s) != 'Vide' %}
+              {# Extraction du prix : on enlève '€' et on remplace ',' par '.' #}
+              {% set prix_attr = state_attr(s, 'prix_moyen') %}
+              {% if prix_attr is mapping and prix_attr.valeur is defined %}
+                {% set prix = prix_attr.valeur | string | replace('€','') | replace(',','.') | float(0) %}
+                
+                {# Récupération de la quantité (input_number.quantite_vin_X) #}
+                {% set num = s.split('_')[1] %}
+                {% set qte = states('input_number.quantite_vin_' ~ num) | float(0) %}
+                
+                {% set ns.total = ns.total + (prix * qte) %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.total | round(2) }}
 
 # 3. AUTOMATISATIONS
 automation:
@@ -1462,6 +1493,8 @@ automation:
           - sensor.vin_18
           - sensor.vin_19
           - sensor.vin_20
+      - platform: homeassistant
+        event: start
     action:
       - action: input_select.set_options
         target:
@@ -1473,15 +1506,22 @@ automation:
               'sensor.vin_6', 'sensor.vin_7', 'sensor.vin_8', 'sensor.vin_9', 'sensor.vin_10',
               'sensor.vin_11', 'sensor.vin_12', 'sensor.vin_13', 'sensor.vin_14', 'sensor.vin_15',
               'sensor.vin_16', 'sensor.vin_17', 'sensor.vin_18', 'sensor.vin_19', 'sensor.vin_20'
-            ] %} {% set ns = namespace(items=[]) %} {% for s in sensors if states(s)
-            != 'Vide' %}
-              {% set nom = state_attr(s, 'nom') %}
-              {% set annee = state_attr(s, 'annee') %}
-              {% if nom is mapping and annee is mapping %}
-                {% set label = s ~ " | " ~ nom.valeur ~ " (" ~ annee.valeur ~ ")" %}
+            ] %}
+            {% set ns = namespace(items=[]) %}
+            {% for s in sensors %}
+              {% if states(s) != 'Vide' %}
+                {% set nom = state_attr(s, 'nom') %}
+                {% set annee = state_attr(s, 'annee') %}
+                {% if nom is mapping and annee is mapping %}
+                  {% set label = s ~ " | " ~ nom.valeur ~ " (" ~ annee.valeur ~ ")" %}
+                {% else %}
+                  {# Permet de voir et vider les capteurs buggés/null #}
+                  {% set label = s ~ " | [ERREUR DONNÉES] - À vider" %}
+                {% endif %}
                 {% set ns.items = ns.items + [ label ] %}
               {% endif %}
-            {% endfor %} {{ ns.items if ns.items | length > 0 else ['Aucun vin à vider'] }}
+            {% endfor %}
+            {{ ns.items if ns.items | length > 0 else ['Aucun vin à vider'] }}
 
 # 4. SCRIPT
 script:
@@ -1491,17 +1531,19 @@ script:
     icon: mdi:trash-can
     mode: single
     sequence:
+      - variables:
+          selection: "{{ states('input_select.selection_vin_a_vider').split(' | ')[0] | trim }}"
       - if:
           - condition: template
-            value_template: "{{ 'sensor.vin_' in states('input_select.selection_vin_a_vider') }}"
+            value_template: "{{ 'sensor.vin_' in selection }}"
         then:
           - event: RAZ_VIN_SPECIFIQUE
             event_data:
-              target_sensor: "{{ states('input_select.selection_vin_a_vider').split(' | ')[0] }}"
+              target_sensor: "{{ selection }}"
           - action: notify.persistent_notification
             data:
               title: "Cellier mis à jour"
-              message: "L'emplacement sélectionné a été remis à zéro."
+              message: "L'emplacement {{ selection }} a été remis à zéro."
         else:
           - action: notify.persistent_notification
             data:
