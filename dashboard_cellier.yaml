@@ -3,6 +3,10 @@ views:
     path: home-2
     title: Home
     cards:
+      - type: entity
+        entity: sensor.valeur_totale_du_cellier
+        icon: mdi:currency-eur
+        name: Valeur Estimée de la Cave
       - type: vertical-stack
         cards:
           - type: entities
