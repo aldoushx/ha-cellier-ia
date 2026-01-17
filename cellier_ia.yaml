@@ -21,6 +21,9 @@ input_button:
   recherche_vin:
     name: "Lancer la recherche IA"
     icon: mdi:magnify-scan
+  reinitialiser_toute_la_cave:
+    name: "Réinitialisation Complète Cave"
+    icon: mdi:bomber
 
 input_number:
   # Declaration des quantités de bouteilles
@@ -1517,6 +1520,14 @@ automation:
               {% endif %}
             {% endfor %}
             {{ ns.items if ns.items | length > 0 else ['Aucun vin à vider'] }}
+  # --- REINIT TOTALE ---
+  - alias: "Cellier - Action RAZ Totale"
+    id: cellier_action_raz_totale
+    trigger:
+      - platform: state
+        entity_id: input_button.reinitialiser_toute_la_cave
+    action:
+      - action: script.raz_complete_cave
 
 # 4. SCRIPT
 script:
@@ -1544,3 +1555,54 @@ script:
             data:
               title: "Erreur de sélection"
               message: "Veuillez sélectionner une bouteille valide dans la liste."
+
+  raz_complete_cave:
+    alias: "Cellier - RAZ Totale Manuelle"
+    description: "Vide individuellement les 20 emplacements"
+    icon: mdi:trash-can-alert
+    mode: single
+    sequence:
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_1" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_2" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_3" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_4" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_5" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_6" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_7" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_8" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_9" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_10" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_11" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_12" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_13" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_14" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_15" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_16" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_17" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_18" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_19" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_20" }
+      - action: notify.persistent_notification
+        data:
+          title: "Cave réinitialisée"
+          message: "Les 20 emplacements ont été remis à zéro manuellement."
