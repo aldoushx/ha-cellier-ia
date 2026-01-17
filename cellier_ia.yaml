@@ -1532,7 +1532,7 @@ automation:
 # 4. SCRIPT
 script:
   vider_emplacement_cellier:
-    alias: "Cellier - Vider emplacement sélectionné"
+    alias: "Cellier - Vider emplacement selectionne"
     description: "Réinitialise l'emplacement sélectionné avec notification"
     icon: mdi:trash-can
     mode: single
@@ -1546,6 +1546,11 @@ script:
           - event: RAZ_VIN_SPECIFIQUE
             event_data:
               target_sensor: "{{ selection }}"
+          - action: input_number.set_value
+            target:
+              entity_id: "input_number.quantite_{{ selection.split('.')[1] }}"
+            data:
+              value: 0
           - action: notify.persistent_notification
             data:
               title: "Cellier mis à jour"
@@ -1602,6 +1607,66 @@ script:
         event_data: { target_sensor: "sensor.vin_19" }
       - event: RAZ_VIN_SPECIFIQUE
         event_data: { target_sensor: "sensor.vin_20" }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_1 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_2 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_3 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_4 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_5 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_6 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_7 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_8 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_9 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_10 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_11 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_12 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_13 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_14 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_15 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_16 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_17 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_18 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_19 }
+        data: { value: 0 }
+      - action: input_number.set_value
+        target: { entity_id: input_number.quantite_vin_20 }
+        data: { value: 0 }
       - action: notify.persistent_notification
         data:
           title: "Cave réinitialisée"
