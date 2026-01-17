@@ -1,11 +1,11 @@
 # Gestionnaire de Cave à vin pour Home Assistant (avec expertise vin Gemini)
 
-Ce package pour Home Assistant est une première mouture qui permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée sur un dashboard (à améliorer !) de saisie et d'inventaire.
+Ce package pour Home Assistant est une première mouture qui permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée (et tolerante, merci au LLM) sur un dashboard (à améliorer !) de saisie et d'inventaire.
 
 ## Fonctionnement général
 
-1. **Saisie** : L'utilisateur renseigne le nom, le millésime et la couleur.
-2. **Traitement Gemini** : Le Gemini analyse la saisie pour identifier précisément le vin, récupère les infos sur les sites spécialisés et renvoie un JSON. la réponse à la requête mais environ 15 secondes à revenir.
+1. **Saisie** : L'utilisateur renseigne le nom, le millésime et la couleur de son vin.
+2. **Traitement Gemini** : Gemini analyse la saisie pour identifier précisément le vin, récupère les infos demandées sur les sites spécialisés et renvoie un JSON. la réponse à la requête met environ 15 secondes à revenir.
 3. **Dispatch** : Une automatisation traite le JSON et remplit les emplacements de la cave de manière intelligente (choisit les emplacements vides, ne duplique pas les vins). Une liste déroulante permet d'effacer les emplacements (un deuxième bouton permet une réinitialisation de la cave, il faut appuyer sur ce bouton avant une première saisie).
 
 Du fait du délai de traitement de la requête par Gemini, il se passe une quinzaine de secondes entre l'appui sur le bouton de recherche du vin et le remplissage de l'emplacement de la cave.
