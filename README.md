@@ -6,17 +6,17 @@ Ce package pour Home Assistant est une première mouture qui permet de gérer un
 
 1. **Saisie** : L'utilisateur renseigne le nom, le millésime et la couleur de son vin.
 2. **Traitement Gemini** : Gemini analyse la saisie pour identifier précisément le vin, récupère les infos demandées sur les sites spécialisés et renvoie un JSON. la réponse à la requête met environ 15 secondes à revenir.
-3. **Dispatch** : Une automatisation traite le JSON et remplit les emplacements de la cave de manière intelligente (choisit les emplacements vides, ne duplique pas les vins). Une liste déroulante permet d'effacer les emplacements (un deuxième bouton permet une réinitialisation de la cave, il faut appuyer sur ce bouton avant une première saisie).
+3. **Dispatch** : Une automatisation traite le JSON en stockant les infos dans un sensor et remplit les emplacements de la cave de manière intelligente (choisit les emplacements vides, ne duplique pas les vins). Une liste déroulante permet d'effacer les emplacements (un deuxième bouton permet une réinitialisation de la cave, il faut appuyer sur ce bouton avant une première saisie pour initialiser).
 
-Du fait du délai de traitement de la requête par Gemini, il se passe une quinzaine de secondes entre l'appui sur le bouton de recherche du vin et le remplissage de l'emplacement de la cave.
+Du fait du délai de traitement de la requête par Gemini, il se passe une dizaine de secondes entre l'appui sur le bouton de recherche du vin et le remplissage de l'emplacement de la cave.
 
 ## Données stockées (Attributes)
 
 Chaque capteur sensor.vin_1 à sensor.vin_20 contient les attributs suivants récupérés par l'IA :
 
 * **Informations produit** : Nom complet du domaine, appellation précise, millésime et couleur.
-* **Profil technique** : Liste des cépages.
-* **Gestion de cave** : Conseil de garde, fenêtre de consommation optimale et apogée.
+* **Cepages** : Liste des cépages.
+* **Gestion** : Conseil de garde, fenêtre de consommation et apogée.
 * **Évaluation et marché** : Note moyenne des sites spécialisés et prix moyen constaté.
 * **Sources** : Liste des sites spécialisés (magasins, guides, sites de critiques) consultés par Gemini pour compiler les informations.
 * **Indice de confiance** : Note de 0 à 100 indiquant le degré de certitude de l'IA sur l'identification du vin et les différents attributs.
@@ -44,10 +44,9 @@ homeassistant:
 
 ### Entités
 
-* **Saisie** : Entités input_text pour le nom, l'année et la couleur du vin.
-* **Retrait** : Un input_select dynamique pour choisir l'emplacement de bouteille à vider.
-* **Déclencheur** : Un input_button qui lance la séquence de recherche Gemini.
-* ... (a compléter)
+* Entités input_text pour le nom, l'année et la couleur du vin.
+* Un input_select dynamique pour choisir l'emplacement de bouteille à vider.
+* Un input_button qui lance la séquence de recherche Gemini, deux autres pour les RAZ.
 
 ### Automatisations
 
@@ -60,5 +59,5 @@ homeassistant:
 1. Copier le fichier cellier_ia.yaml dans le répertoire packages avec file editor (ou ssh etc...).
 2. Copier le contenu du dashboard dashboard_cellier.yaml dans un nouveau dashboard.
 3. Redémarrer Home Assistant.
-4. Avant de taper la premiere saisie, initialiser tous les emplacements de la cave en appuyant sur le bouton de reinitialisation totale du dashboard.
+4. Avant de taper la premiere saisie, initialiser tous les emplacements de la cave en appuyant sur le bouton de reinitialisation totale de la cave sur le dashboard.
 5. Enjoy (avec modération ?)
