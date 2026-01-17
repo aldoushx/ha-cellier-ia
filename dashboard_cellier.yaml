@@ -1,736 +1,1608 @@
-views:
-  - type: masonry
-    path: home-2
-    title: Home
-    cards:
-      - type: entity
-        entity: sensor.valeur_totale_du_cellier
-        icon: mdi:currency-eur
-        name: Valeur Estimée de la Cave
-      - type: vertical-stack
-        cards:
-          - type: entities
-            entities:
-              - entity: input_text.vin_nom
-                name: Nom
-                icon: mdi:bottle-wine
-              - entity: input_text.vin_annee
-                name: Année
-                secondary_info: none
-                icon: mdi:calendar
-              - entity: input_text.vin_couleur
-                name: Couleur
-                icon: mdi:palette-swatch-variant
-              - entity: input_button.recherche_vin
-                secondary_info: state
-                name: Recherche
-                icon: mdi:magnify
-            title: Nouveau vin
-            grid_options:
-              columns: 12
-              rows: auto
-          - type: vertical-stack
-            title: Gestion des Emplacements
-            cards:
-              - type: entities
-                entities:
-                  - entity: input_select.selection_vin_a_vider
-                    name: Choisir la bouteille à retirer
-                    icon: mdi:format-list-bulleted
-              - type: button
-                name: Vider cet emplacement
-                icon: mdi:trash-can
-                icon_height: 30px
-                style: |
-                  ha-card {
-                    background-color: var(--error-color);
-                    color: white;
-                  }
-                tap_action:
-                  action: call-service
-                  service: script.cellier_vider_emplacement_selectionne
-                  confirmation:
-                    text: >-
-                      Êtes-vous sûr de vouloir retirer ce vin ? Cette action est
-                      irréversible.
-              - type: markdown
-                title: 🔍 Détails du vin sélectionné
-                content: >
-                  {% set selection =
-                  states('input_select.selection_vin_a_vider').split(' | ')[0]
-                  %} {% if states(selection) != 'Vide' and
-                  selection.startswith('sensor.vin') %}
-                    **Vin :** {{ state_attr(selection, 'nom').valeur }} ({{ state_attr(selection, 'annee').valeur }})
-                    **Couleur :** {{ state_attr(selection, 'couleur').valeur }}
-                    **Appellation :** {{ state_attr(selection, 'appellation').valeur }}
-                    **Cépages :** {{ state_attr(selection, 'cepages').valeur }}
-                    **Note :** ⭐ {{ state_attr(selection, 'note_moyenne').valeur }} - {{ state_attr(selection, 'note_moyenne')['sites consultes'] }}
-                    **Prix moyen :** {{ state_attr(selection, 'prix_moyen').valeur }} - {{ state_attr(selection, 'prix_moyen')['magasins sources'] }}
-                    
-                    ---
+# ----------------------------------------------              
+# PACKAGE : GESTION DU CELLIER AVEC AIDE GEMINI
+# ----------------------------------------------
 
-                    **Conseil de garde :** {% if state_attr(selection, 'garde_conseillee') != None %} {{ state_attr(selection, 'garde_conseillee').valeur }} {% else %} Non disponible {% endif %} 
-                    **À boire entre :** {% if state_attr(selection, 'fenetre_consommation') != None %} {{ state_attr(selection, 'fenetre_consommation').valeur }} {% else %} Non disponible {% endif %}
-                  {% else %}
-                    *Veuillez sélectionner un emplacement occupé pour voir les détails.*
-                  {% endif %}
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_1' %} **Emplacement 1** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+# 1. ENTRÉES
+input_select:
+  selection_vin_a_vider:
+    name: "Sélectionner un emplacement à vider"
+    options: ["Aucun vin à vider"]
+    icon: mdi:wine-bottle
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
+input_text:
+  vin_nom:
+    name: "Nom du vin à chercher"
+  vin_couleur:
+    name: "Couleur"
+  vin_annee:
+    name: "Année"
 
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
+input_button:
+  recherche_vin:
+    name: "Lancer la recherche IA"
+    icon: mdi:magnify-scan
+  reinitialiser_toute_la_cave:
+    name: "Réinitialisation Complète Cave"
+    icon: mdi:bomber
+
+input_number:
+  # Declaration des quantités de bouteilles
+  quantite_vin_1:
+    name: "Qté Vin 1"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_2:
+    name: "Qté Vin 2"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_3:
+    name: "Qté Vin 3"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_4:
+    name: "Qté Vin 4"
+    min: 0
+    max: 99
+    step: 1
+    mode: box 
+  quantite_vin_5:
+    name: "Qté Vin 5"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_6:
+    name: "Qté Vin 6"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_7:
+    name: "Qté Vin 7"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_8:
+    name: "Qté Vin 8"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_9:
+    name: "Qté Vin 9"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_10:
+    name: "Qté Vin 10"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_11:
+    name: "Qté Vin 11"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_12:
+    name: "Qté Vin 12"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_13:
+    name: "Qté Vin 13"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_14:
+    name: "Qté Vin 14"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_15:
+    name: "Qté Vin 15"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_16:
+    name: "Qté Vin 16"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_17:
+    name: "Qté Vin 17"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_18:
+    name: "Qté Vin 18"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_19:
+    name: "Qté Vin 19"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+  quantite_vin_20:
+    name: "Qté Vin 20"
+    min: 0
+    max: 99
+    step: 1
+    mode: box
+
+# 2. CAPTEURS
+template:
+  # --- STOCKAGE TAMPON DU JSON IA ---
+  - trigger:
+      - platform: event
+        event_type: STOCKER_GEMINI_DATA
+    sensor:
+      - name: "Gemini Data Storage"
+        unique_id: gemini_data_storage
+        state: "Prêt"
+        attributes:
+          donnees_json: "{{ trigger.event.data.json_output }}"
+
+  # --- EMPLACEMENTS CAVE ---
+  - trigger:
+      - platform: event
+        event_type: "ENREGISTRER_VIN_CELLIER"
+      - platform: event
+        event_type: "RAZ_VIN_SPECIFIQUE"
+    sensor:
+      # --- CAPTEUR VIN 1 ---
+      - name: "Vin 1"
+        unique_id: vin_cellier_1
+        state: >
+          {% set s = 'sensor.vin_1' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_1' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_1' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_1' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_1', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 2 ---
+      - name: "Vin 2"
+        unique_id: vin_cellier_2
+        state: >
+          {% set s = 'sensor.vin_2' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_2' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_2' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_2' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_2', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 3 ---
+      - name: "Vin 3"
+        unique_id: vin_cellier_3
+        state: >
+          {% set s = 'sensor.vin_3' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_3' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_3' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_3' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_3', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 4 ---
+      - name: "Vin 4"
+        unique_id: vin_cellier_4
+        state: >
+          {% set s = 'sensor.vin_4' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_4' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_4' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_4' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_4', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 5 ---
+      - name: "Vin 5"
+        unique_id: vin_cellier_5
+        state: >
+          {% set s = 'sensor.vin_5' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_5' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_5' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_5' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_5', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 6 ---
+      - name: "Vin 6"
+        unique_id: vin_cellier_6
+        state: >
+          {% set s = 'sensor.vin_6' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_6' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_6' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_6' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_6', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 7 ---
+      - name: "Vin 7"
+        unique_id: vin_cellier_7
+        state: >
+          {% set s = 'sensor.vin_7' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_7' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_7' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_7' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_7', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 8 ---
+      - name: "Vin 8"
+        unique_id: vin_cellier_8
+        state: >
+          {% set s = 'sensor.vin_8' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_8' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_8' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_8' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_8', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 9 ---
+      - name: "Vin 9"
+        unique_id: vin_cellier_9
+        state: >
+          {% set s = 'sensor.vin_9' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_9' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_9' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_9' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_9', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 10 ---
+      - name: "Vin 10"
+        unique_id: vin_cellier_10
+        state: >
+          {% set s = 'sensor.vin_10' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_10' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_10' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_10' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_10', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 11 ---
+      - name: "Vin 11"
+        unique_id: vin_cellier_11
+        state: >
+          {% set s = 'sensor.vin_11' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_11' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_11' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_11' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_11', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 12 ---
+      - name: "Vin 12"
+        unique_id: vin_cellier_12
+        state: >
+          {% set s = 'sensor.vin_12' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_12' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_12' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_12' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_12', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 13 ---
+      - name: "Vin 13"
+        unique_id: vin_cellier_13
+        state: >
+          {% set s = 'sensor.vin_13' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_13' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_13' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_13' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_13', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 14 ---
+      - name: "Vin 14"
+        unique_id: vin_cellier_14
+        state: >
+          {% set s = 'sensor.vin_14' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_14' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_14' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_14' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_14', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 15 ---
+      - name: "Vin 15"
+        unique_id: vin_cellier_15
+        state: >
+          {% set s = 'sensor.vin_15' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_15' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_15' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_15' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_15', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 16 ---
+      - name: "Vin 16"
+        unique_id: vin_cellier_16
+        state: >
+          {% set s = 'sensor.vin_16' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_16' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_16' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_16' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_16', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 17 ---
+      - name: "Vin 17"
+        unique_id: vin_cellier_17
+        state: >
+          {% set s = 'sensor.vin_17' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_17' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_17' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_17' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_17', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 18 ---
+      - name: "Vin 18"
+        unique_id: vin_cellier_18
+        state: >
+          {% set s = 'sensor.vin_18' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_18' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_18' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_18' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_18', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 19 ---
+      - name: "Vin 19"
+        unique_id: vin_cellier_19
+        state: >
+          {% set s = 'sensor.vin_19' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_19' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_19' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_19' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_19', 'prix_moyen') }} {% endif %}
+      # --- CAPTEUR VIN 20 ---
+      - name: "Vin 20"
+        unique_id: vin_cellier_20
+        state: >
+          {% set s = 'sensor.vin_20' %}
+          {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+          {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} 
+            {% set d = trigger.event.data.donnees %}
+            {{ d.get('nom', {}).get('valeur', 'Inconnu') }} ({{ d.get('annee', {}).get('valeur', '?') }})
+          {% else %} {{ states(s) }} {% endif %}
+        attributes:
+          nom: >
+            {% set s = 'sensor.vin_20' %}
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == s %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == s %} {{ trigger.event.data.donnees.get('nom') }}
+            {% else %} {{ state_attr(s, 'nom') }} {% endif %}
+          annee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('annee') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'annee') }} {% endif %}
+          couleur: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('couleur') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'couleur') }} {% endif %}
+          cepages: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('cepages') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'cepages') }} {% endif %}
+          note_moyenne: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('note moyenne') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'note_moyenne') }} {% endif %}
+          appellation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('appellation') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'appellation') }} {% endif %}
+          provenance: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('provenance') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'provenance') }} {% endif %}
+          garde_conseillee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('duree de garde conseillee') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'garde_conseillee') }} {% endif %}
+          fenetre_consommation: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('fenetre de consommation') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'fenetre_consommation') }} {% endif %}
+          apogee: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('apogee') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'apogee') }} {% endif %}
+          date_limite: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('date limite') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'date_limite') }} {% endif %}
+          prix_moyen: >
+            {% if trigger.event.event_type == 'RAZ_VIN_SPECIFIQUE' and trigger.event.data.target_sensor == 'sensor.vin_20' %} Vide
+            {% elif trigger.event.event_type == 'ENREGISTRER_VIN_CELLIER' and trigger.event.data.target_sensor == 'sensor.vin_20' %} {{ trigger.event.data.donnees.get('prix moyen') }}
+            {% else %} {{ state_attr('sensor.vin_20', 'prix_moyen') }} {% endif %}
+# --- CALCUL VALEUR TOTALE DE LA CAVE ---
+  - sensor:
+      - name: "Valeur Totale du Cellier"
+        unique_id: valeur_totale_cellier
+        unit_of_measurement: "€"
+        device_class: monetary
+        state: >
+          {% set sensors = [
+            'sensor.vin_1', 'sensor.vin_2', 'sensor.vin_3', 'sensor.vin_4', 'sensor.vin_5',
+            'sensor.vin_6', 'sensor.vin_7', 'sensor.vin_8', 'sensor.vin_9', 'sensor.vin_10',
+            'sensor.vin_11', 'sensor.vin_12', 'sensor.vin_13', 'sensor.vin_14', 'sensor.vin_15',
+            'sensor.vin_16', 'sensor.vin_17', 'sensor.vin_18', 'sensor.vin_19', 'sensor.vin_20'
+          ] %}
+          {% set ns = namespace(total=0) %}
+          {% for s in sensors %}
+            {% if states(s) != 'Vide' %}
+              {% set prix_attr = state_attr(s, 'prix_moyen') %}
+              {% if prix_attr is mapping and prix_attr.valeur is defined %}
+                {% set prix = prix_attr.valeur | string | replace('€','') | replace(',','.') | float(0) %}
+                {% set num = s.split('_')[1] %}
+                {% set qte = states('input_number.quantite_vin_' ~ num) | float(0) %}
+                {% set ns.total = ns.total + (prix * qte) %}
               {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_1
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_1
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_2' %} **Emplacement 2** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            {% endif %}
+          {% endfor %}
+          {{ ns.total | round(2) }}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
+# 3. AUTOMATISATIONS
+automation:
+  # --- REQUETE GEMINI ---
+  - alias: "IA - Recherche Vin Expert Final"
+    id: ia_recherche_vin_expert_final
+    trigger:
+      - platform: state
+        entity_id: input_button.recherche_vin
+    action:
+      - action: ai_task.generate_data
+        data:
+          entity_id: ai_task.google_ai_task
+          task_name: infos vin
+          instructions: >-
+            Agis comme un sommelier expert. Ta réponse doit être uniquement un objet
+            JSON, sans texte avant ou après. Analyse ce vin : Nom : {{
+            states('input_text.vin_nom') }} Couleur : {{
+            states('input_text.vin_couleur') }} Année : {{
+            states('input_text.vin_annee') }}
 
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
+            CONSIGNES DE FORMATAGE : 
+            1. Pour les cepages, ne fais pas de liste. Donne une seule ligne de texte avec au maximum les 3 cépages majoritaires (ex: "Merlot, Cabernet"), fournis les par ordre de proportion avec la proportion associée. Pareil pour les sites consultés pour la note et le prix, donne une seule ligne et ne fais pas de liste.
+            2. Pour l'année optimale de consommation, donne uniquement le chiffre sous forme de nombre (ex: 2030), pas de texte ou guillemets. 
+            3. Cherche la note moyenne, les sites consultés en source, l'appellation, ville, durée de garde, fenêtre de consommation, annee optimale de consommation, et prix moyen avec la source des prix. 
+            4. Les champs du json seront : "nom", "annee", "couleur", "cepages", "note moyenne" avec une sous rubrique "sites consultes", "appellation", "provenance", "duree de garde conseillee", "fenetre de consommation", "apogee", "date limite", "prix moyen" avec en sous rubrique "magasins sources". 
+            5. Pour chaque champ indique un indice de confiance de l'information en pourcentage.
+        response_variable: gemini_result
+      - event: STOCKER_GEMINI_DATA
+        event_data:
+          json_output: "{{ gemini_result.data | from_json }}"
+
+  # --- DISPATCH ---
+  - alias: "Cellier - Dispatcher Intelligent"
+    id: cellier_dispatcher_intelligent
+    trigger:
+      - platform: event
+        event_type: STOCKER_GEMINI_DATA
+    action:
+      - variables:
+          nouveau: "{{ trigger.event.data.json_output }}"
+          sensors: >
+            {{ ['sensor.vin_1', 'sensor.vin_2', 'sensor.vin_3', 'sensor.vin_4', 'sensor.vin_5',
+                'sensor.vin_6', 'sensor.vin_7', 'sensor.vin_8', 'sensor.vin_9', 'sensor.vin_10',
+                'sensor.vin_11', 'sensor.vin_12', 'sensor.vin_13', 'sensor.vin_14', 'sensor.vin_15',
+                'sensor.vin_16', 'sensor.vin_17', 'sensor.vin_18', 'sensor.vin_19', 'sensor.vin_20'] }}
+          sensor_existant: >
+            {% set ns = namespace(target='none') %}
+            {% for s in sensors if states(s) != 'Vide' %}
+              {% if state_attr(s, 'nom').valeur == nouveau.nom.valeur and 
+                    state_attr(s, 'annee').valeur | string == nouveau.annee.valeur | string and 
+                    state_attr(s, 'couleur').valeur == nouveau.couleur.valeur %}
+                {% set ns.target = s %}
               {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_2
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_2
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_3' %} **Emplacement 3** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            {% endfor %}
+            {{ ns.target }}
+          premier_libre: "{{ sensors | select('is_state', 'Vide') | first | default('none') }}"
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ sensor_existant != 'none' }}"
+            sequence:
+              - event: ENREGISTRER_VIN_CELLIER
+                event_data: { target_sensor: "{{ sensor_existant }}", donnees: "{{ nouveau }}" }
+          - conditions:
+              - condition: template
+                value_template: "{{ sensor_existant == 'none' and premier_libre != 'none' }}"
+            sequence:
+              - event: ENREGISTRER_VIN_CELLIER
+                event_data: { target_sensor: "{{ premier_libre }}", donnees: "{{ nouveau }}" }
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
+  # --- MAJ LISTE ---
+  - alias: "Cellier - MAJ Liste RAZ"
+    id: cellier_maj_liste_raz
+    trigger:
+      - platform: state
+        entity_id:
+          - sensor.vin_1
+          - sensor.vin_2
+          - sensor.vin_3
+          - sensor.vin_4
+          - sensor.vin_5
+          - sensor.vin_6
+          - sensor.vin_7
+          - sensor.vin_8
+          - sensor.vin_9
+          - sensor.vin_10
+          - sensor.vin_11
+          - sensor.vin_12
+          - sensor.vin_13
+          - sensor.vin_14
+          - sensor.vin_15
+          - sensor.vin_16
+          - sensor.vin_17
+          - sensor.vin_18
+          - sensor.vin_19
+          - sensor.vin_20
+      - platform: homeassistant
+        event: start
+    action:
+      - action: input_select.set_options
+        target:
+          entity_id: input_select.selection_vin_a_vider
+        data:
+          options: >
+            {% set sensors = [
+              'sensor.vin_1', 'sensor.vin_2', 'sensor.vin_3', 'sensor.vin_4', 'sensor.vin_5',
+              'sensor.vin_6', 'sensor.vin_7', 'sensor.vin_8', 'sensor.vin_9', 'sensor.vin_10',
+              'sensor.vin_11', 'sensor.vin_12', 'sensor.vin_13', 'sensor.vin_14', 'sensor.vin_15',
+              'sensor.vin_16', 'sensor.vin_17', 'sensor.vin_18', 'sensor.vin_19', 'sensor.vin_20'
+            ] %}
+            {% set ns = namespace(items=[]) %}
+            {% for s in sensors %}
+              {% if states(s) != 'Vide' %}
+                {% set nom = state_attr(s, 'nom') %}
+                {% set annee = state_attr(s, 'annee') %}
+                {% if nom is mapping and annee is mapping %}
+                  {% set label = s ~ " | " ~ nom.valeur ~ " (" ~ annee.valeur ~ ")" %}
+                {% else %}
+                  {# Permet de voir et vider les capteurs buggés/null #}
+                  {% set label = s ~ " | [ERREUR DONNÉES] - À vider" %}
+                {% endif %}
+                {% set ns.items = ns.items + [ label ] %}
               {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_3
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_3
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_4' %} **Emplacement 4** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            {% endfor %}
+            {{ ns.items if ns.items | length > 0 else ['Aucun vin à vider'] }}
+  # --- REINIT TOTALE ---
+  - alias: "Cellier - Action RAZ Totale"
+    id: cellier_action_raz_totale
+    trigger:
+      - platform: state
+        entity_id: input_button.reinitialiser_toute_la_cave
+    action:
+      - action: script.raz_complete_cave
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
+# 4. SCRIPT
+script:
+  vider_emplacement_cellier:
+    alias: "Cellier - Vider emplacement sélectionné"
+    description: "Réinitialise l'emplacement sélectionné avec notification"
+    icon: mdi:trash-can
+    mode: single
+    sequence:
+      - variables:
+          selection: "{{ states('input_select.selection_vin_a_vider').split(' | ')[0] | trim }}"
+      - if:
+          - condition: template
+            value_template: "{{ 'sensor.vin_' in selection }}"
+        then:
+          - event: RAZ_VIN_SPECIFIQUE
+            event_data:
+              target_sensor: "{{ selection }}"
+          - action: notify.persistent_notification
+            data:
+              title: "Cellier mis à jour"
+              message: "L'emplacement {{ selection }} a été remis à zéro."
+        else:
+          - action: notify.persistent_notification
+            data:
+              title: "Erreur de sélection"
+              message: "Veuillez sélectionner une bouteille valide dans la liste."
 
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_4
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_4
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_5' %} **Emplacement 5** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_5
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_5
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_6' %} **Emplacement 6** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_6
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_6
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_7' %} **Emplacement 7** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_7
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_7
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_8' %} **Emplacement 8** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_8
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_8
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_9' %} **Emplacement 9** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_9
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_9
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_10' %} **Emplacement 10** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_10
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_10
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_11' %} **Emplacement 11** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_11
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_11
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_12' %} **Emplacement 12** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_12
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_12
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_13' %} **Emplacement 13** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_13
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_13
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_14' %} **Emplacement 14** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_14
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_14
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_15' %} **Emplacement 15** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_15
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_15
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_16' %} **Emplacement 16** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_16
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_16
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_17' %} **Emplacement 17** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_17
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_17
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_18' %} **Emplacement 18** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_18
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_18
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_19' %} **Emplacement 19** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_19
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_19
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: >
-              {% set s = 'sensor.vin_20' %} **Emplacement 20** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
-
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
-              {% else %}
-                <font color="gray">*Emplacement Libre*</font>
-              {% endif %}
-                
-          - type: entities
-            entities:
-              - entity: input_number.quantite_vin_20
-                name: Nombre de bouteilles
-                icon: mdi:counter
-            show_header_toggle: false
-            state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_20
-                state_not: Vide
-        grid_options:
-          columns: 6
-          rows: 8
+  raz_complete_cave:
+    alias: "Cellier - RAZ Totale Manuelle"
+    description: "Vide individuellement les 20 emplacements"
+    icon: mdi:trash-can-alert
+    mode: single
+    sequence:
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_1" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_2" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_3" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_4" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_5" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_6" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_7" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_8" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_9" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_10" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_11" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_12" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_13" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_14" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_15" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_16" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_17" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_18" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_19" }
+      - event: RAZ_VIN_SPECIFIQUE
+        event_data: { target_sensor: "sensor.vin_20" }
+      - action: notify.persistent_notification
+        data:
+          title: "Cave réinitialisée"
+          message: "Les 20 emplacements ont été remis à zéro manuellement."
