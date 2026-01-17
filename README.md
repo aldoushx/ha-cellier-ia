@@ -27,7 +27,8 @@ Chaque capteur sensor.vin_1 à sensor.vin_20 contient les attributs suivants ré
 Pour utiliser ce package, les éléments suivants doivent être configurés dans Home Assistant :
 
 1. **Intégration Google Generative AI** :
-* Disposer d'une clé API Google AI Studio.
+* Disposer d'une clé API Google AI Studio :
+  https://aistudio.google.com/app/apikey?hl=fr
 * Installer et configurer l'intégration officielle Google Generative AI.
 Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre le temps nécessaire à chaque épuisement des tokens pour compléter sa cave.
 
