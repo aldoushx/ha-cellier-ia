@@ -29,9 +29,10 @@ Pour utiliser ce package, les éléments suivants doivent être configurés dans
 1. **Intégration Google Generative AI** :
 * Disposer d'une clé API Google AI Studio :
   https://aistudio.google.com/app/apikey?hl=fr
-Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre le temps nécessaire à chaque épuisement des tokens pour compléter sa cave.
-
 * Installer et configurer l'intégration officielle Google Generative AI.
+
+
+Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre le temps nécessaire à chaque épuisement des tokens pour compléter sa cave.
 
 2. **Configuration du dossier package de HA** :
 * Le support des packages doit être activé dans votre fichier configuration.yaml :
