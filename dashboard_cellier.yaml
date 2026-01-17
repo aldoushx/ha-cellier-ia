@@ -48,7 +48,7 @@ views:
                   }
                 tap_action:
                   action: call-service
-                  service: script.cellier_vider_emplacement_selectionne
+                  service: script.vider_emplacement_cellier
                   confirmation:
                     text: >-
                       Êtes-vous sûr de vouloir retirer ce vin ? Cette action est
