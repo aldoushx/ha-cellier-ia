@@ -1380,17 +1380,12 @@ template:
           ] %}
           {% set ns = namespace(total=0) %}
           {% for s in sensors %}
-            {# On vérifie si l'emplacement n'est pas vide #}
             {% if states(s) != 'Vide' %}
-              {# Extraction du prix : on enlève '€' et on remplace ',' par '.' #}
               {% set prix_attr = state_attr(s, 'prix_moyen') %}
               {% if prix_attr is mapping and prix_attr.valeur is defined %}
                 {% set prix = prix_attr.valeur | string | replace('€','') | replace(',','.') | float(0) %}
-                
-                {# Récupération de la quantité (input_number.quantite_vin_X) #}
                 {% set num = s.split('_')[1] %}
                 {% set qte = states('input_number.quantite_vin_' ~ num) | float(0) %}
-                
                 {% set ns.total = ns.total + (prix * qte) %}
               {% endif %}
             {% endif %}
