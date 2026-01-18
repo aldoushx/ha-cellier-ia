@@ -1394,7 +1394,24 @@ template:
             {% endif %}
           {% endfor %}
           {{ ns.total | round(2) }}
-
+  - sensor:
+      - name: "Total Bouteilles Cave"
+        unique_id: total_bouteilles_cave
+        unit_of_measurement: "bouteilles"
+        device_class: weight # Optionnel, aide à l'affichage
+        icon: mdi:wine-rack
+        state: >
+          {% set ns = namespace(total=0) %}
+          {% for i in range(1, 21) %}
+            {% set entity = 'input_number.quantite_vin_' ~ i %}
+            {% set qty = states(entity) | float(0) %}
+            {% set ns.total = ns.total + qty %}
+          {% endfor %}
+          {{ ns.total | int }}
+        availability: >
+          {# Le capteur est disponible si au moins un input_number est trouvé #}
+          {{ states('input_number.quantite_vin_1') not in ['unknown', 'unavailable'] }}
+          
 # 3. AUTOMATISATIONS
 automation:
   # --- REQUETE GEMINI ---
@@ -1420,7 +1437,7 @@ automation:
             2. Pour l'année optimale de consommation, donne uniquement le chiffre sous forme de nombre (ex: 2030), pas de texte ou guillemets. 
             3. Cherche la note moyenne, les sites consultés en source, l'appellation, ville, durée de garde, fenêtre de consommation, annee optimale de consommation, et prix moyen avec la source des prix. 
             4. Les champs du json seront : "nom", "annee", "couleur", "cepages", "note moyenne" avec une sous rubrique "sites consultes", "appellation", "provenance", "duree de garde conseillee", "fenetre de consommation", "apogee", "date limite", "prix moyen" avec en sous rubrique "magasins sources". 
-            5. Pour chaque champ indique un indice de confiance de l'information en pourcentage.
+            5. Pour chaque champ indique un indice de confiance de l'information en pourcentage, avec comme intitulé "confiance".
         response_variable: gemini_result
       - event: STOCKER_GEMINI_DATA
         event_data:
