@@ -1,6 +1,6 @@
 # Gestionnaire de Cave à vin pour Home Assistant (avec expertise vin Gemini)
 
-Ce package pour Home Assistant est une première mouture qui permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée (et tolerante, merci au LLM) sur un dashboard (à améliorer !) de saisie et d'inventaire.
+Ce package pour Home Assistant permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée (et tolerante, merci au LLM) sur un dashboard de saisie et d'inventaire.
 
 ## Fonctionnement général
 
@@ -9,7 +9,7 @@ Ce package pour Home Assistant est une première mouture qui permet de gérer un
 3. **Dispatch** : Une automatisation traite le JSON en stockant les infos dans un sensor et remplit les emplacements de la cave de manière intelligente (choisit les emplacements vides, ne duplique pas les vins). Une liste déroulante permet d'effacer les emplacements (un deuxième bouton permet une réinitialisation de la cave, il faut appuyer sur ce bouton avant une première saisie pour initialiser).
 
 Du fait du délai de traitement de la requête par Gemini, il se passe une dizaine de secondes entre l'appui sur le bouton de recherche du vin et le remplissage de l'emplacement de la cave.
-La requête échouera en cas d'épuisement des tokens du plan de facturation Gemini (gratuit de mon côté), le message d'erreur est visible dans Système => Journal avec cette info. Si un emplacement cave a été rempli de manière erronée, le vider avec le bouton du dashboard et retenter plus tard. 
+La requête échouera en cas d'épuisement du quotat du plan de facturation Gemini (gratuit de mon côté). Le message d'erreur est visible dans Système => Journal avec cette info. Si un emplacement cave a été rempli de manière erronée, le vider avec le bouton du dashboard et retenter plus tard. 
 
 ## Données stockées (Attributes)
 
@@ -32,12 +32,9 @@ L'interface du dashboard utilise un système de retour visuel dynamique pour év
 * 🟠 **Orange (#FF9800)** : Fiabilité modérée (60-79%).
 * 🔴 **Rouge (#F44336)** : Fiabilité faible (< 60%), une vérification manuelle est conseillée.
 
-De plus, chaque carte d'emplacement intègre une **pastille de couleur dynamique** (●) située devant le nom du vin. Le code Jinja2 interprète la couleur détectée par Gemini (Rouge, Blanc, Rosé) pour colorer visuellement la pastille, facilitant ainsi la lecture rapide de l'inventaire de la cave.
+Chaque carte d'emplacement intègre une pastille de couleur située devant le nom du vin, facilitant la lecture rapide de l'inventaire de la cave.
+Les informations principales du vin sont affichées sur cette carte, les autres infos sont disponibles en attributs des sensor.vin_xx.
 
-### Organisation visuelle de la carte
-La carte est structurée pour offrir une clarté maximale :
-1. **En-tête** : Pastille de couleur et Nom du domaine en gras.
-2
 ## Prérequis
 
 Pour utiliser ce package, les éléments suivants doivent être configurés dans Home Assistant :
@@ -48,7 +45,7 @@ Pour utiliser ce package, les éléments suivants doivent être configurés dans
 * Installer et configurer l'intégration officielle Google Generative AI.
 
 
-Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre le temps nécessaire à chaque épuisement des tokens pour compléter sa cave.
+Nota : pas de paiement requis, le plan gratuit suffit, mais il faudra attendre le temps nécessaire à chaque épuisement du quotat pour compléter sa cave.
 
 2. **Configuration du dossier package de HA** :
 * Le support des packages doit être activé dans votre fichier configuration.yaml :
@@ -66,6 +63,7 @@ homeassistant:
 * Entités input_text pour le nom, l'année et la couleur du vin.
 * Un input_select dynamique pour choisir l'emplacement de bouteille à vider.
 * Un input_button qui lance la séquence de recherche Gemini, deux autres pour les RAZ.
+* Des templates affichent la valeur totale de la cave et le nombre de bouteilles.
 
 ### Automatisations
 
