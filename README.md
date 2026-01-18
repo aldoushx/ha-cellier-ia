@@ -26,7 +26,7 @@ Chaque capteur sensor.vin_1 à sensor.vin_20 contient les attributs suivants ré
 
 L'interface du dashboard utilise un système de retour visuel dynamique pour évaluer la fiabilité des informations extraites par Gemini. Chaque donnée clé (Note, Prix, Garde, Apogée) est associée à un attribut `confiance` qui détermine sa couleur d'affichage selon les seuils de certitude de l'IA :
 
-* 🟢 **Vert vif (#00FF00)** : Confiance absolue (≥ 95%).
+* 🟢 **Vert vif/fluo (#00FF00)** : Confiance absolue (≥ 95%).
 * 🟢 **Vert foncé (#4CAF50)** : Fiabilité excellente (90-94%).
 * 🟡 **Jaune-Vert (#CDDC39)** : Fiabilité bonne (80-89%).
 * 🟠 **Orange (#FF9800)** : Fiabilité modérée (60-79%).
