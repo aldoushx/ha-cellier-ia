@@ -12,6 +12,24 @@ views:
         name: Stock Total
       - type: vertical-stack
         cards:
+          - type: markdown
+            content: >
+              ### Légende Confiance IA
+
+              <font size="4" color="#00FF00">●</font> <b>95-100%</b> : Confiance
+              absolue
+
+              <font size="4" color="#228B22">●</font> <b>90-94%</b> : Fiabilité
+              excellente
+
+              <font size="4" color="#CDDC39">●</font> <b>80-89%</b> : Fiabilité
+              bonne
+
+              <font size="4" color="#FF9800">●</font> <b>60-79%</b> : Fiabilité
+              modérée
+
+              <font size="4" color="#F44336">●</font> <b>< 60%</b> :
+              Vérification conseillée
           - type: entities
             entities:
               - entity: input_text.vin_nom
