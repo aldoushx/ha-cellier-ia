@@ -22,6 +22,22 @@ Chaque capteur sensor.vin_1 à sensor.vin_20 contient les attributs suivants ré
 * **Sources** : Liste des sites spécialisés (magasins, guides, sites de critiques) consultés par Gemini pour compiler les informations.
 * **Indice de confiance** : Note de 0 à 100 indiquant le degré de certitude de l'IA sur l'identification du vin et les différents attributs.
 
+## Affichage et Code Couleur de Confiance
+
+L'interface du dashboard utilise un système de retour visuel dynamique pour évaluer la fiabilité des informations extraites par Gemini. Chaque donnée clé (Note, Prix, Garde, Apogée) est associée à un attribut `confiance` qui détermine sa couleur d'affichage selon les seuils de certitude de l'IA :
+
+* 🟢 **Vert vif (#00FF00)** : Confiance absolue (≥ 95%).
+* 🟢 **Vert foncé (#4CAF50)** : Fiabilité excellente (90-94%).
+* 🟡 **Jaune-Vert (#CDDC39)** : Fiabilité bonne (80-89%).
+* 🟠 **Orange (#FF9800)** : Fiabilité modérée (60-79%).
+* 🔴 **Rouge (#F44336)** : Fiabilité faible (< 60%), une vérification manuelle est conseillée.
+
+De plus, chaque carte d'emplacement intègre une **pastille de couleur dynamique** (●) située devant le nom du vin. Le code Jinja2 interprète la couleur détectée par Gemini (Rouge, Blanc, Rosé) pour colorer visuellement la pastille, facilitant ainsi la lecture rapide de l'inventaire de la cave.
+
+### Organisation visuelle de la carte
+La carte est structurée pour offrir une clarté maximale :
+1. **En-tête** : Pastille de couleur et Nom du domaine en gras.
+2
 ## Prérequis
 
 Pour utiliser ce package, les éléments suivants doivent être configurés dans Home Assistant :
