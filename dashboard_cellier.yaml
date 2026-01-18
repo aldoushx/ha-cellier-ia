@@ -7,6 +7,9 @@ views:
         entity: sensor.valeur_totale_du_cellier
         icon: mdi:currency-eur
         name: Valeur Estimée de la Cave
+      - type: entity
+        entity: sensor.total_bouteilles_cave
+        name: Stock Total
       - type: vertical-stack
         cards:
           - type: entities
@@ -90,24 +93,41 @@ views:
                 hold_action:
                   action: none
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_1
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_1' %} **Emplacement 1** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_1' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 1** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_1
@@ -115,32 +135,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_1
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_2
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_2' %} **Emplacement 2** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_2' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 2** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_2
@@ -148,32 +181,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_2
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_3
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_3' %} **Emplacement 3** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_3' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 3** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_3
@@ -181,32 +227,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_3
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_4
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_4' %} **Emplacement 4** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_4' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 4** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_4
@@ -214,32 +273,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_4
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_5
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_5' %} **Emplacement 5** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_5' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 5** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_5
@@ -247,32 +319,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_5
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_6
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_6' %} **Emplacement 6** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_6' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 6** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_6
@@ -280,32 +365,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_6
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_7
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_7' %} **Emplacement 7** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_7' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 7** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_7
@@ -313,32 +411,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_7
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_8
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_8' %} **Emplacement 8** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_8' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 8** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_8
@@ -346,32 +457,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_8
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_9
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_9' %} **Emplacement 9** :  {% if states(s)
-              != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_9' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 9** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_9
@@ -379,32 +503,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_9
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_10
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_10' %} **Emplacement 10** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_10' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 10** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_10
@@ -412,32 +549,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_10
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_11
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_11' %} **Emplacement 11** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_11' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 11** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_11
@@ -445,32 +595,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_11
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_12
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_12' %} **Emplacement 12** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_12' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 12** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_12
@@ -478,32 +641,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_12
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_13
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_13' %} **Emplacement 13** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_13' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 13** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_13
@@ -511,32 +687,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_13
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_14
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_14' %} **Emplacement 14** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_14' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 14** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_14
@@ -544,32 +733,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_14
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_15
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_15' %} **Emplacement 15** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_15' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 15** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_15
@@ -577,32 +779,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_15
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_16
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_16' %} **Emplacement 16** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_16' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 16** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_16
@@ -610,32 +825,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_16
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_17
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_17' %} **Emplacement 17** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_17' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 17** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_17
@@ -643,32 +871,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_17
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_18
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_18' %} **Emplacement 18** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_18' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 18** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_18
@@ -676,32 +917,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_18
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_19
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_19' %} **Emplacement 19** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_19' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 19** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_19
@@ -709,32 +963,45 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_19
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
       - type: vertical-stack
+        visibility:
+          - condition: state
+            entity: sensor.vin_20
+            state_not: Vide
         cards:
           - type: markdown
-            content: >
-              {% set s = 'sensor.vin_20' %} **Emplacement 20** :  {% if
-              states(s) != 'Vide' %}
-                ### {{ state_attr(s, 'nom').valeur }}
-                *{{ state_attr(s, 'couleur').valeur }} | {{ state_attr(s, 'annee').valeur }}
-              {{ state_attr(s, 'appellation').valeur }}
+            content: |
+              {% set s = 'sensor.vin_20' %}
+              {% if states(s) != 'Vide' and states(s) != 'unknown' %}
+                {%- macro get_c(attr) -%}
+                  {%- set data = state_attr(s, attr) -%}
+                  {# On reste sur l'attribut standard 'confiance' #}
+                  {%- if data is not none and data.confiance is defined -%}
+                    {%- set n = data.confiance | replace('%','') | int -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                  {%- else -%}white{%- endif -%}
+                {%- endmacro -%}
+                
+                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
+                {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
+                {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
+                {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
+                {%- elif 'rosé' in coul or 'rose' in coul -%} {%- set hex_coul = '#FFB6C1' -%}
+                {%- else -%} {%- set hex_coul = '#707070' -%}
+                {%- endif -%}
 
-              ⭐ {{ state_attr(s, 'note_moyenne').valeur }}  - {{ state_attr(s,
-              'prix_moyen').valeur }}*
-
-                **Conseil de garde :** {% if state_attr(s, 'garde_conseillee') != None %} *{{ state_attr(s, 'garde_conseillee').valeur }}* {% else %} *Non disponible* {% endif %} 
-                **Apogée :** {% if state_attr(s, 'apogee') != None %} *{{ state_attr(s, 'apogee').valeur }}* {% else %} *Non disponible* {% endif %}
+                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
+                ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
+                <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
+                <b>Apogée :</b> <font color="{{ get_c('apogee') }}">{{ state_attr(s, 'apogee').valeur }}</font>
               {% else %}
+                **Emplacement 20** :
                 <font color="gray">*Emplacement Libre*</font>
               {% endif %}
-                
           - type: entities
             entities:
               - entity: input_number.quantite_vin_20
@@ -742,10 +1009,6 @@ views:
                 icon: mdi:counter
             show_header_toggle: false
             state_color: false
-            visibility:
-              - condition: state
-                entity: sensor.vin_20
-                state_not: Vide
         grid_options:
           columns: 6
           rows: 8
