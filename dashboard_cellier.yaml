@@ -3,13 +3,15 @@ views:
     path: home-2
     title: Home
     cards:
-      - type: entity
-        entity: sensor.valeur_totale_du_cellier
-        icon: mdi:currency-eur
-        name: Valeur Estimée de la Cave
-      - type: entity
-        entity: sensor.total_bouteilles_cave
-        name: Stock Total
+      - type: entities
+        entities:
+          - entity: sensor.valeur_totale_du_cellier
+            name: Valeur de la cave
+          - entity: sensor.total_bouteilles_cave
+            icon: mdi:bottle-wine
+            name: Stock de bouteilles
+          - entity: input_boolean.gestion_de_la_cave
+            icon: mdi:book-edit-outline
       - type: vertical-stack
         cards:
           - type: markdown
@@ -117,6 +119,10 @@ views:
                       ?
                 hold_action:
                   action: none
+        visibility:
+          - condition: state
+            entity: input_boolean.gestion_de_la_cave
+            state: 'on'
       - type: vertical-stack
         visibility:
           - condition: state
