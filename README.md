@@ -2,7 +2,6 @@
 
 Ce package pour Home Assistant permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée (et tolerante, merci au LLM) sur un dashboard de saisie et d'inventaire.
 
-Le dashboard comporte un binary sensor qui permet de dérouler l'interface de saisie des vins et de gestion des emplacements.
 
 ## Fonctionnement général
 
@@ -26,7 +25,9 @@ Chaque capteur sensor.vin_1 à sensor.vin_20 contient les attributs suivants ré
 
 ## Affichage et Code Couleur de Confiance
 
-L'interface du dashboard utilise un système de retour visuel dynamique pour évaluer la fiabilité des informations extraites par Gemini. Chaque donnée clé (Note, Prix, Garde, Apogée) est associée à un attribut `confiance` qui détermine sa couleur d'affichage selon les seuils de certitude de l'IA :
+Le dashboard comporte un binary sensor qui permet de dérouler l'interface de saisie des vins et de gestion des emplacements.
+
+Les cartes de vins utilisent un code couleur pour évaluer la fiabilité des informations extraites par Gemini. Chaque donnée clé (Note, Prix, Garde, Apogée) est associée à un attribut `confiance` qui détermine sa couleur d'affichage selon les seuils de certitude de l'IA :
 
 * 🟢 **Vert vif/fluo (#00FF00)** : Confiance absolue (≥ 95%).
 * 🟢 **Vert foncé (#4CAF50)** : Fiabilité excellente (90-94%).
