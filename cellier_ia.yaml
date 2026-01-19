@@ -16,6 +16,10 @@ input_text:
     name: "Couleur"
   vin_annee:
     name: "Année"
+  derniere_erreur_gemini:
+    name: "Dernière Erreur API Gemini"
+    icon: mdi:alert-circle-outline
+    max: 255
 
 input_button:
   recherche_vin:
@@ -1545,6 +1549,32 @@ automation:
         entity_id: input_button.reinitialiser_toute_la_cave
     action:
       - action: script.raz_complete_cave
+  # --- ERREUR ---
+  - alias: "Système - Capture Erreur Quota Gemini"
+    triggers:
+      - trigger: event
+        event_type: system_log_event
+    conditions:
+      - condition: template
+        value_template: |
+          {{ 'google' in trigger.event.data.message[0] | lower or 
+             'generative' in trigger.event.data.message[0] | lower or
+             '429' in trigger.event.data.message[0] }}
+    actions:
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.derniere_erreur_gemini
+        data:
+          value: >
+            {% set msg = trigger.event.data.message[0] %}
+            {{ msg[:250] if msg is not none else "Erreur inconnue" }}
+      - action: persistent_notification.create
+        data:
+          title: "Cellier IA : Erreur de Quota Gemini"
+          message: "Épuisement du quota IA, réessayez plus tard."
+          notification_id: erreur_quota_gemini
+    mode: parallel
+    max: 10
 
 # 4. SCRIPT
 script:
