@@ -9,6 +9,12 @@ input_select:
     options: ["Aucun vin à vider"]
     icon: mdi:wine-bottle
 
+input_boolean:
+  gestion_de_la_cave:
+    name: "Mode Gestion de la Cave"
+    icon: mdi:book-edit-outline
+    initial: off
+    
 input_text:
   vin_nom:
     name: "Nom du vin à chercher"
