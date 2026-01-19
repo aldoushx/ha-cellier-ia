@@ -9,7 +9,7 @@ Ce package pour Home Assistant permet de gérer un inventaire de 20 emplacements
 3. **Dispatch** : Une automatisation traite le JSON en stockant les infos dans un sensor et remplit les emplacements de la cave de manière intelligente (choisit les emplacements vides, ne duplique pas les vins). Une liste déroulante permet d'effacer les emplacements (un deuxième bouton permet une réinitialisation de la cave, il faut appuyer sur ce bouton avant une première saisie pour initialiser).
 
 Du fait du délai de traitement de la requête par Gemini, il se passe une dizaine de secondes entre l'appui sur le bouton de recherche du vin et le remplissage de l'emplacement de la cave.
-La requête échouera en cas d'épuisement du quotat du plan de facturation Gemini (gratuit de mon côté). Le message d'erreur est visible dans Système => Journal avec cette info. Si un emplacement cave a été rempli de manière erronée, le vider avec le bouton du dashboard et retenter plus tard. 
+La requête échouera en cas d'épuisement du quotat du plan de facturation Gemini (gratuit de mon côté). Le message d'erreur est visible dans Système => Journal avec cette info, et une notification persistante est générée. Si un emplacement cave a été rempli de manière erronée, le vider avec le bouton du dashboard et retenter plus tard. 
 
 ## Données stockées (Attributes)
 
@@ -35,6 +35,11 @@ L'interface du dashboard utilise un système de retour visuel dynamique pour év
 Chaque carte d'emplacement intègre une pastille de couleur située devant le nom du vin, facilitant la lecture rapide de l'inventaire de la cave.
 Les informations principales du vin sont affichées sur cette carte, les autres infos sont disponibles en attributs des sensor.vin_xx.
 
+Un autre indicateur est placé devant le nom du vin, qui indique la maturité du vin pour la consommation, à savoir :
+* ⏳  **Bonification** : Le vin n'a pas encore atteint son potentiel. À laisser vieillir. 
+* 💎  **Apogée** : Fenêtre de dégustation idéale. Le vin est à son sommet.
+* 🍂  **Déclin** : L'apogée est dépassée. À consommer en priorité pour éviter la perte. 
+
 ## Prérequis
 
 Pour utiliser ce package, les éléments suivants doivent être configurés dans Home Assistant :
@@ -55,15 +60,22 @@ homeassistant:
   packages: !include_dir_named packages
 ```
 
+3. **Configuration de l'accès au log HA** :
+* L'accès au journal d'erreur doit être activé dans votre fichier configuration.yaml pour obtenir la notification de quotat IA dépassé :
+
+```yaml
+system_log:
+  fire_event: true
+```
 
 ## Contenu du package
 
 ### Entités
 
-* Entités input_text pour le nom, l'année et la couleur du vin.
+* Entités input_text pour le nom, l'année et la couleur du vin, le stockage du message de quotat atteint.
 * Un input_select dynamique pour choisir l'emplacement de bouteille à vider.
 * Un input_button qui lance la séquence de recherche Gemini, deux autres pour les RAZ.
-* Des templates affichent la valeur totale de la cave et le nombre de bouteilles.
+* Des template sensors affichent la valeur totale de la cave et le nombre de bouteilles.
 
 ### Automatisations
 
@@ -73,8 +85,9 @@ homeassistant:
 
 ## Installation
 
-1. Copier le fichier cellier_ia.yaml dans le répertoire packages avec file editor (ou ssh etc...).
-2. Copier le contenu du dashboard dashboard_cellier.yaml dans un nouveau dashboard.
+1. Copier le fichier cellier_ia.yaml dans le répertoire /packages avec file editor (ou ssh etc...).
+2. Ajouter les commandes de prise en compte du dossier package et de lecture du log dans le fichier configuration.yaml.
 3. Redémarrer Home Assistant.
-4. Avant de taper la premiere saisie, initialiser tous les emplacements de la cave en appuyant sur le bouton de reinitialisation totale de la cave sur le dashboard.
-5. Enjoy (avec modération ?)
+4. Copier le contenu du dashboard dashboard_cellier.yaml dans un nouveau dashboard.
+5. Avant de taper la premiere saisie, initialiser tous les emplacements de la cave en appuyant sur le bouton de reinitialisation totale de la cave sur le dashboard.
+6. Enjoy (avec modération ?)
