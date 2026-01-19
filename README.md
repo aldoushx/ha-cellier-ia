@@ -78,6 +78,7 @@ system_log:
 * Entités input_text pour le nom, l'année et la couleur du vin, le stockage du message de quotat atteint.
 * Un input_select dynamique pour choisir l'emplacement de bouteille à vider.
 * Un input_button qui lance la séquence de recherche Gemini, deux autres pour les RAZ.
+* Un binary_sensor pour derouler l'interface de gestion.
 * Des template sensors affichent la valeur totale de la cave et le nombre de bouteilles.
 
 ### Automatisations
