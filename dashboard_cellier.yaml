@@ -13,8 +13,8 @@ views:
       - type: vertical-stack
         cards:
           - type: markdown
-            content: >
-              ### Légende Confiance IA
+            content: >-
+              ### Légende Confiance IA et Maturité
 
               <font size="4" color="#00FF00">●</font> <b>95-100%</b> : Confiance
               absolue
@@ -30,6 +30,13 @@ views:
 
               <font size="4" color="#F44336">●</font> <b>< 60%</b> :
               Vérification conseillée
+
+
+              ⏳ : Bonification
+
+              💎 : Apogée
+
+              🍂 : Déclin
           - type: entities
             entities:
               - entity: input_text.vin_nom
@@ -122,14 +129,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -137,7 +142,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -168,14 +188,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -183,7 +201,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -214,14 +247,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -229,7 +260,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -260,14 +306,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -275,7 +319,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -306,14 +365,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -321,7 +378,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -352,14 +424,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -367,7 +437,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -398,14 +483,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -413,7 +496,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -444,14 +542,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -459,7 +555,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -490,14 +601,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -505,7 +614,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -536,14 +660,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -551,7 +673,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -582,14 +719,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -597,7 +732,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -628,14 +778,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -643,7 +791,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -674,14 +837,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -689,7 +850,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -720,14 +896,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -735,7 +909,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -766,14 +955,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -781,7 +968,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -812,14 +1014,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -827,7 +1027,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -858,14 +1073,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -873,7 +1086,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -904,14 +1132,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -919,7 +1145,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -950,14 +1191,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -965,7 +1204,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
@@ -996,14 +1250,12 @@ views:
               {% if states(s) != 'Vide' and states(s) != 'unknown' %}
                 {%- macro get_c(attr) -%}
                   {%- set data = state_attr(s, attr) -%}
-                  {# On reste sur l'attribut standard 'confiance' #}
                   {%- if data is not none and data.confiance is defined -%}
                     {%- set n = data.confiance | replace('%','') | int -%}
-                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#4CAF50{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
+                    {%- if n >= 95 -%}#00FF00{%- elif n >= 90 -%}#228B22{%- elif n >= 80 -%}#CDDC39{%- elif n >= 60 -%}#FF9800{%- else -%}#F44336{%- endif -%}
                   {%- else -%}white{%- endif -%}
                 {%- endmacro -%}
                 
-                {# Correction de la pastille : passage en minuscules pour détecter 'rouge' ou 'Rouge' #}
                 {%- set coul = (state_attr(s, 'couleur').valeur | lower) if state_attr(s, 'couleur') else '' -%}
                 {%- if 'rouge' in coul -%} {%- set hex_coul = '#8B0000' -%}
                 {%- elif 'blanc' in coul -%} {%- set hex_coul = '#F3E5AB' -%}
@@ -1011,7 +1263,22 @@ views:
                 {%- else -%} {%- set hex_coul = '#707070' -%}
                 {%- endif -%}
 
-                <font size="5" color="{{ hex_coul }}">●</font> <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
+                {# Logique de l'indicateur d'apogée Mélange Personnalisé #}
+                {%- set annee_actuelle = now().year -%}
+                {%- set apogee_brut = state_attr(s, 'apogee').valeur -%}
+                {%- set apogee = apogee_brut | replace(' ','') | regex_findall_index('\d{4}', index=0) | int if apogee_brut is string and '20' in apogee_brut else apogee_brut | int(0) -%}
+                
+                {%- if apogee == 0 -%}
+                  {%- set indic = "" -%}
+                {%- elif apogee > annee_actuelle -%}
+                  {%- set indic = " ⏳" -%} {# Sablier : Attente #}
+                {%- elif apogee < annee_actuelle -%}
+                  {%- set indic = " 🍂" -%} {# Feuille : Déclin #}
+                {%- else -%}
+                  {%- set indic = " 💎" -%} {# Diamant : Apogée #}
+                {%- endif -%}
+
+                <font size="5" color="{{ hex_coul }}">●</font>{{ indic }} <font size="4"><b>{{ state_attr(s, 'nom').valeur }}</b></font><br>
                 <i>{{ state_attr(s, 'annee').valeur }} - {{ state_attr(s, 'appellation').valeur }}</i>
                 ⭐ <font color="{{ get_c('note_moyenne') }}">{{ state_attr(s, 'note_moyenne').valeur }}</font> - 💰 <font color="{{ get_c('prix_moyen') }}">{{ state_attr(s, 'prix_moyen').valeur }}</font><br>
                 <b>Garde :</b> <font color="{{ get_c('garde_conseillee') }}">{{ state_attr(s, 'garde_conseillee').valeur }}</font>
