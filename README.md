@@ -2,6 +2,8 @@
 
 Ce package pour Home Assistant permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée (et tolerante, merci au LLM) sur un dashboard de saisie et d'inventaire.
 
+Le dashboard comporte un binary sensor qui permet de dérouler l'interface de saisie des vins et de gestion des emplacements.
+
 ## Fonctionnement général
 
 1. **Saisie** : L'utilisateur renseigne le nom, le millésime et la couleur de son vin.
