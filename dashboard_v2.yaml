@@ -1,0 +1,237 @@
+views:
+  - type: masonry
+    path: cave
+    title: Cave
+    cards:
+      - type: markdown
+        title: 🍷 Mon Inventaire
+        content: >
+          {% set cave = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+          {% set year_now = now().year %}
+
+          {%- macro get_status(raw_val) -%}
+            {%- set n = (raw_val | replace('%', '') | int(0)) if raw_val is defined else 0 -%}
+            {%- if n >= 95 -%} ✅
+            {%- elif n >= 90 -%} 🟢
+            {%- elif n >= 80 -%} 🟡
+            {%- elif n >= 60 -%} 🟠
+            {%- else -%} 🔴
+            {%- endif -%}
+          {%- endmacro -%}
+
+          {% if cave is not none and cave.items() | count > 0 %}
+            {% for id, info in cave.items() %}
+            
+            {% set c = (info.couleur.valeur | lower) if info.couleur is defined else '' %}
+            {% set dot = '🔴' if 'rouge' in c else ('🌕' if 'blanc' in c else ('🏮' if 'ros' in c else '⚪')) %}
+            {% set apo = (info.apogee.valeur | int(year_now)) if info.apogee is defined else year_now %}
+            {% set apo_icon = '⏳' if apo > year_now else ('💎' if apo == year_now else '🍂') %}
+
+            ---
+            #### {{ dot }} {{ apo_icon }} **{{ info.nom.valeur }} ({{ info.annee.valeur }})**
+            **Stock : {{ info.nombre_bouteilles | default(0) }} bouteille(s)**
+            
+            * {{ get_status(info.note.confiance) }} **Note :**  {{ info.note.valeur | default('N/A') }}
+            * {{ get_status(info.prix_moyen.confiance) }} **Prix :** {{ info.prix_moyen.valeur | default('-') }} €
+            * {{ get_status(info.apogee.confiance) }} **Apogée :** {{ info.apogee.valeur | default('-') }}
+            * {{ get_status(info.garde_conseillee.confiance) }} **Garde :** {{ info.garde_conseillee.valeur | default('-') }}
+            
+            *Appellation : {{ info.appellation.valeur | default('-') }} | {{ info.provenance.valeur | default('-') }}*
+            <br><small>Cépages : {{ info.cepages.valeur | default('-') }}</small>
+            
+            {% endfor %}
+          {% else %}
+            > ℹ️ *La cave est vide.*
+          {% endif %}
+      - type: entities
+        entities:
+          - entity: sensor.cave_nombre_de_bouteilles
+          - entity: sensor.cave_valeur_totale
+          - entity: input_boolean.afficher_ajout_vin
+          - entity: input_boolean.afficher_gestion_cave
+          - entity: input_boolean.afficher_legende
+      - type: markdown
+        title: ℹ️ Légende
+        content: >
+          **Confiance des données :** ✅ >95% | 🟢 >90% | 🟡 >80% | 🟠 >60% | 🔴
+          <60%
+
+          **État de consommation (Apogée) :** ⏳ Futur | 💎 Année actuelle | 🍂
+          Dépassé
+
+          **Codes couleurs vins :** 🔴 Rouge | 🌕 Blanc | 🏮 Rosé
+        visibility:
+          - condition: state
+            entity: input_boolean.afficher_legende
+            state: 'on'
+      - type: vertical-stack
+        cards:
+          - type: entities
+            entities:
+              - entity: input_text.v2_recherche_nom
+              - entity: input_text.v2_recherche_couleur
+              - entity: input_text.v2_recherche_annee
+              - entity: input_button.v2_bouton_ia
+                name: Rechercher le vin
+              - entity: input_button.copy_vin_recherche_to_supersensor
+                name: Ajouter le vin à la cave
+                action_name: Ajouter
+                tap_action:
+                  action: call-service
+                  service: input_button.press
+                  target:
+                    entity_id: input_button.copy_vin_recherche_to_supersensor
+          - type: vertical-stack
+            cards:
+              - type: markdown
+                title: 🔍 État de la recherche
+                content: >
+                  {% set r = states.sensor.vin_recherche.attributes %} {% set
+                  err_msg = states('input_text.derniere_erreur_gemini') %}
+
+                  {# Extraction sécurisée #} {% set nom_attr = r.nom if r.nom is
+                  defined else '{"valeur": "En attente"}' %} {% set nom_data =
+                  nom_attr | from_json if nom_attr is string else nom_attr %} {%
+                  set nom_r = nom_data.valeur | default('En attente') %}
+
+                  {% set cave = state_attr('sensor.cave_a_vin_supersensor',
+                  'vins') | default({}, true) %}
+
+                  {# --- 1. GESTION DES ERREURS --- #}
+
+                  {% if is_state('input_boolean.ia_erreur', 'on') %}
+                    {% if '429' in err_msg %}
+                      ## <font color="#e74c3c">❌ Quota IA dépassé (429)</font>
+                      Vous avez fait trop de requêtes. Attendez 1 minute avant de réessayer.
+                    {% elif '503' in err_msg %}
+                      ## <font color="#e74c3c">❌ Serveur IA surchargé (503)</font>
+                      Google est temporairement saturé. Réessayez dans quelques instants.
+                    {% else %}
+                      ## <font color="#e74c3c">❌ Erreur d'IA</font>
+                      Une erreur inattendue est survenue. Renouvelez votre recherche plus tard.
+                    {% endif %}
+
+                  {% elif is_state('input_boolean.ia_en_cours', 'on') %}
+                    ## <font color="#3498db">🔄 Recherche IA en cours...</font>
+                    L'expert sommelier analyse votre demande.
+
+                  {% elif nom_r == "En attente" %}
+                    ## <font color="#7f8c8d">⚪ Prêt à rechercher</font>
+                    Remplissez les champs et lancez l'IA.
+
+                  {% else %}
+                    {# --- LOGIQUE DOUBLON --- #}
+                    {% set annee_data = r.annee | from_json if r.annee is string else r.annee %}
+                    {% set couleur_data = r.couleur | from_json if r.couleur is string else r.couleur %}
+                    {% set annee_r = annee_data.valeur | string %}
+                    {% set couleur_r = couleur_data.valeur | lower %}
+                    
+                    {% set ns = namespace(found=false) %}
+                    {% for id, info in cave.items() %}
+                      {% if info.nom.valeur | lower == nom_r | lower and 
+                            info.annee.valeur | string == annee_r and 
+                            info.couleur.valeur | lower == couleur_r %}
+                        {% set ns.found = true %}
+                      {% endif %}
+                    {% endfor %}
+
+                    {% if ns.found %}
+                      ## <font color="#e67e22">⚠️ Vin déjà existant</font>
+                    {% else %}
+                      ## <font color="#2ecc71">✅ Vin trouvé</font>
+                    {% endif %}
+                  {% endif %}
+
+                  --- {# --- AFFICHAGE FICHE --- #} {% if nom_r != "En attente"
+                  and is_state('input_boolean.ia_en_cours', 'off') and
+                  is_state('input_boolean.ia_erreur', 'off') %} **Détails :** -
+                  **Nom :** {{ nom_r }} - **Année :** {{ (r.annee | from_json if
+                  r.annee is string else r.annee).valeur }} - **Prix estimé :**
+                  {{ (r.prix_moyen | from_json if r.prix_moyen is string else
+                  r.prix_moyen).valeur }} € {% endif %}
+        visibility:
+          - condition: state
+            entity: input_boolean.afficher_ajout_vin
+            state: 'on'
+      - type: vertical-stack
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: entities
+                title: ⚙️ Outils de Gestion
+                show_header_toggle: false
+                entities:
+                  - type: section
+                    label: Modifier l'entrée sélectionnée
+                  - entity: input_select.selection_vin_suppression
+                    name: Choisir un vin
+              - type: horizontal-stack
+                cards:
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Retrait bouteille
+                    icon: mdi:minus-thick
+                    tap_action:
+                      action: call-service
+                      service: input_button.press
+                      target:
+                        entity_id: input_button.decrement_stock
+                    icon_height: 30px
+                    show_state: false
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Ajout bouteille
+                    icon: mdi:plus-thick
+                    tap_action:
+                      action: call-service
+                      service: input_button.press
+                      target:
+                        entity_id: input_button.increment_stock
+                    icon_height: 30px
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Supprimer
+                    icon: mdi:delete-forever
+                    tap_action:
+                      action: call-service
+                      service: input_button.press
+                      target:
+                        entity_id: input_button.delete_selected_wine
+                    icon_height: 30px
+              - type: markdown
+                title: 📄 Détails de l'entrée
+                content: >
+                  {% set selection =
+                  states('input_select.selection_vin_suppression') %}  {% set
+                  target_id = selection.split(' | ')[0] if '|' in selection else
+                  '' %}  {% set cave =
+                  state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+
+                  {% if target_id in cave %}
+                    {% set info = cave[target_id] %}
+                    **Nom :** {{ info.nom.valeur }}
+                    **Stock actuel : {{ info.nombre_bouteilles }} bouteilles**
+                    
+                    ---
+                    **Fiche technique :**
+                    - **Année :** {{ info.annee.valeur }}
+                    - **Couleur :** {{ info.couleur.valeur }}
+                    - **Appellation :** {{ info.appellation.valeur }}
+                    - **Provenance :** {{ info.provenance.valeur }}
+                    - **Cépages :** {{ info.cepages.valeur }}
+                    - **Note :** {{ info.note.valeur }}
+                    - **Prix moyen :** {{ info.prix_moyen.valeur }} €
+                    - **Apogée :** {{ info.apogee.valeur }}
+                    - **Garde :** {{ info.garde_conseillee.valeur }}
+                    
+                    <small>Identifiant technique : {{ target_id }}</small>
+                  {% else %}
+                    *Veuillez sélectionner un vin dans la liste déroulante pour voir sa fiche complète.*
+                  {% endif %}
+        visibility:
+          - condition: state
+            entity: input_boolean.afficher_gestion_cave
+            state: 'on'

@@ -1,0 +1,337 @@
+# --- ENTRÉES ---
+input_text:
+  v2_recherche_nom:
+    name: "Nom du Vin"
+  v2_recherche_couleur:
+    name: "Couleur"
+  v2_recherche_annee:
+    name: "Année"
+  derniere_erreur_gemini:
+    name: "Dernière Erreur Gemini"
+
+input_button:
+  v2_bouton_ia:
+    name: "Lancer IA"
+    icon: mdi:robot
+  copy_vin_recherche_to_supersensor:
+    name: "Ajouter Vin Recherche"
+    icon: mdi:plus-box
+  increment_stock:
+    name: "+ 1"
+  decrement_stock:
+    name: "- 1"
+  delete_selected_wine:
+    name: "Supprimer"
+
+input_select:
+  selection_vin_suppression:
+    name: "Choisir un vin"
+    options: ["Aucun vin"]
+
+input_boolean:
+  ia_en_cours:
+    name: "IA en cours"
+    icon: mdi:robot-confused
+  ia_erreur:
+    name: "Erreur IA détectée"
+    icon: mdi:alert-circle
+  afficher_gestion_cave:
+    name: "Afficher la gestion de la cave"
+    icon: mdi:cog
+  afficher_ajout_vin:
+    name: "Afficher l'ajout de vin"
+    icon: mdi:plus-circle-outline
+  afficher_legende:
+    name: "Afficher la légende"
+    icon: mdi:help-circle-outline
+
+template:
+  # 1. LE SENSOR DE RECHERCHE
+  - trigger:
+      - platform: event
+        event_type: "REMPLIR_VIN_RECHERCHE"
+      - platform: event
+        event_type: "VIDER_VIN_RECHERCHE"
+      - platform: homeassistant
+        event: start
+    sensor:
+      - name: "Vin Recherche"
+        unique_id: vin_recherche
+        icon: mdi:magnify
+        state: >
+          {% if trigger is defined and trigger.event.event_type == "REMPLIR_VIN_RECHERCHE" %}
+            {{ trigger.event.data.nom.valeur | default('Recherche OK') }}
+          {% else %}
+            Prêt
+          {% endif %}
+        attributes:
+          nom: >
+            {{ trigger.event.data.nom | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.nom is defined) 
+               else '{"valeur": "En attente", "confiance": "0%"}' }}
+          annee: >
+            {{ trigger.event.data.annee | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.annee is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          couleur: >
+            {{ trigger.event.data.couleur | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.couleur is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          cepages: >
+            {{ trigger.event.data.cepages | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.cepages is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          note_moyenne: >
+            {{ trigger.event.data.note_moyenne | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.note_moyenne is defined) 
+               else '{"valeur": "0", "confiance": "0%"}' }}
+          appellation: >
+            {{ trigger.event.data.appellation | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.appellation is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          provenance: >
+            {{ trigger.event.data.provenance | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.provenance is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          garde_conseillee: >
+            {{ trigger.event.data.garde_conseillee | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.garde_conseillee is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          apogee: >
+            {{ trigger.event.data.apogee | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.apogee is defined) 
+               else '{"valeur": "2026", "confiance": "0%"}' }}
+          prix_moyen: >
+            {{ trigger.event.data.prix_moyen | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.prix_moyen is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+
+  # 2. LE SUPERSENSOR
+  - trigger:
+      - platform: event
+        event_type: "UPDATE_CAVE_FINAL"
+    sensor:
+      - name: "Cave a Vin Supersensor"
+        unique_id: cave_a_vin_supersensor
+        state: "{{ now().strftime('%d/%m/%Y %H:%M:%S') }}"
+        attributes:
+          vins: "{{ trigger.event.data.new_collection }}"
+
+  # 3. STATISTIQUES
+  - sensor:
+      - name: "Cave Nombre de Bouteilles"
+        unique_id: cave_nombre_bouteilles
+        unit_of_measurement: "btls"
+        icon: mdi:bottle-wine
+        state: >
+          {% set cave = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+          {% if cave is not none %}
+            {% set ns = namespace(total=0) %}
+            {% for key, val in cave.items() %}
+              {% set ns.total = ns.total + (val.nombre_bouteilles | int(0)) %}
+            {% endfor %}
+            {{ ns.total }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Cave Valeur Totale"
+        unique_id: cave_valeur_totale
+        unit_of_measurement: "€"
+        icon: mdi:currency-eur
+        state: >
+          {% set cave = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+          {% if cave is not none %}
+            {% set ns = namespace(valeur=0) %}
+            {% for key, val in cave.items() %}
+              {% set prix = val.prix_moyen.valeur | int(0) if val.prix_moyen is mapping else val.prix_moyen | int(0) %}
+              {% set qte = val.nombre_bouteilles | int(0) %}
+              {% set ns.valeur = ns.valeur + (prix * qte) %}
+            {% endfor %}
+            {{ ns.valeur }}
+          {% else %}
+            0
+          {% endif %}
+
+automation:
+  # 1. IA - RECHERCHE
+  - alias: "IA - Recherche Vin Expert V2"
+    id: ia_recherche_vin_expert_v2
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: input_button.v2_bouton_ia
+    action:
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_on
+        target: { entity_id: input_boolean.ia_en_cours }
+      - action: ai_task.generate_data
+        data:
+          entity_id: ai_task.google_ai_task
+          task_name: infos vin
+          instructions: >-
+            Agis comme un sommelier expert. Ta réponse doit être uniquement un dictionnaire JSON pur.
+            Analyse : {{ states('input_text.v2_recherche_nom') }}, {{ states('input_text.v2_recherche_couleur') }}, {{ states('input_text.v2_recherche_annee') }}.
+            STRUCTURE : {"nom": {"valeur": "...", "confiance": "100%"}, "annee": {"valeur": 2018, "confiance": "100%"}, "couleur": {"valeur": "...", "confiance": "100%"}, "cepages": {"valeur": "...", "confiance": "95%"}, "note_moyenne": {"valeur": "...", "sites consultes": "...", "confiance": "98%"}, "appellation": {"valeur": "...", "confiance": "100%"}, "provenance": {"valeur": "...", "confiance": "100%"}, "garde_conseillee": {"valeur": "...", "confiance": "90%"}, "fenetre_consommation": {"valeur": "...", "confiance": "90%"}, "apogee": {"valeur": 2029, "confiance": "85%"}, "date_limite": {"valeur": "...", "confiance": "85%"}, "prix_moyen": {"valeur": "35", "magasins sources": "...", "confiance": "95%"}}
+        response_variable: gemini_result
+
+      - if:
+          - condition: template
+            value_template: "{{ gemini_result.data is defined and gemini_result.data | length > 50 }}"
+        then:
+          - event: REMPLIR_VIN_RECHERCHE
+            event_data:
+              nom: "{{ (gemini_result.data | from_json).nom }}"
+              annee: "{{ (gemini_result.data | from_json).annee }}"
+              couleur: "{{ (gemini_result.data | from_json).couleur }}"
+              cepages: "{{ (gemini_result.data | from_json).cepages }}"
+              note_moyenne: "{{ (gemini_result.data | from_json).note_moyenne }}"
+              appellation: "{{ (gemini_result.data | from_json).appellation }}"
+              provenance: "{{ (gemini_result.data | from_json).provenance }}"
+              garde_conseillee: "{{ (gemini_result.data | from_json).garde_conseillee }}"
+              fenetre_consommation: "{{ (gemini_result.data | from_json).fenetre_consommation }}"
+              apogee: "{{ (gemini_result.data | from_json).apogee }}"
+              date_limite: "{{ (gemini_result.data | from_json).date_limite }}"
+              prix_moyen:
+                valeur: >
+                  {% set p = (gemini_result.data | from_json).prix_moyen.valeur | string | replace(' ', '') %}
+                  {{ p.split('-')[0].split(',')[0].split('.')[0] | regex_findall('\d+') | join('') | int | default(0) }}
+                magasins sources: "{{ (gemini_result.data | from_json).prix_moyen['magasins sources'] }}"
+                confiance: "{{ (gemini_result.data | from_json).prix_moyen.confiance }}"
+        else:
+          - action: input_boolean.turn_on
+            target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_en_cours }
+
+  # 2. CAPTURE ERREURS
+  - alias: "Système - Capture Erreur Quota Gemini"
+    id: systeme_capture_erreur_quota_gemini
+    trigger:
+      - trigger: event
+        event_type: system_log_event
+    condition:
+      - condition: template
+        value_template: >
+          {{ 'google' in trigger.event.data.message[0] | lower or 
+             '429' in trigger.event.data.message[0] or
+             '503' in trigger.event.data.message[0] }}
+    action:
+      - action: input_boolean.turn_on
+        target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_en_cours }
+      - action: input_text.set_value
+        target: { entity_id: input_text.derniere_erreur_gemini }
+        data:
+          value: "{{ trigger.event.data.message[0][:250] if trigger.event.data.message[0] is not none else 'Erreur' }}"
+
+  # 3. AJOUTER / RESET
+  - alias: "Cave - Ajouter et Reset Recherche"
+    id: cave_ajouter_et_reset
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id: input_button.copy_vin_recherche_to_supersensor
+    action:
+      - variables:
+          current_vins: "{{ state_attr('sensor.cave_a_vin_supersensor', 'vins') | default({}, true) }}"
+          s: "{{ states.sensor.vin_recherche.attributes }}"
+          entry_id: "entry_{{ now().strftime('%Y%m%d_%H%M%S') }}"
+      - event: UPDATE_CAVE_FINAL
+        event_data:
+          new_collection: >
+            {% set new_wine = {
+              'nom': s.nom | from_json if s.nom is string else s.nom,
+              'annee': s.annee | from_json if s.annee is string else s.annee,
+              'couleur': s.couleur | from_json if s.couleur is string else s.couleur,
+              'cepages': s.cepages | from_json if s.cepages is string else s.cepages,
+              'note': s.note_moyenne | from_json if s.note_moyenne is string else s.note_moyenne,
+              'appellation': s.appellation | from_json if s.appellation is string else s.appellation,
+              'provenance': s.provenance | from_json if s.provenance is string else s.provenance,
+              'garde_conseillee': s.garde_conseillee | from_json if s.garde_conseillee is string else s.garde_conseillee,
+              'apogee': s.apogee | from_json if s.apogee is string else s.apogee,
+              'prix_moyen': s.prix_moyen | from_json if s.prix_moyen is string else s.prix_moyen,
+              'nombre_bouteilles': 1
+            } %}
+            {{ dict(current_vins, **{entry_id: new_wine}) }}
+      - event: VIDER_VIN_RECHERCHE
+
+  # 4. GESTION STOCK
+  - alias: "Cave - Ajuster Stock"
+    id: cave_ajuster_stock
+    trigger:
+      - platform: state
+        entity_id: [input_button.increment_stock, input_button.decrement_stock]
+    action:
+      - variables:
+          selection: "{{ states('input_select.selection_vin_suppression') }}"
+          target_id: "{{ selection.split(' | ')[0] if '|' in selection else '' }}"
+          diff: "{{ 1 if trigger.entity_id == 'input_button.increment_stock' else -1 }}"
+          current_vins: "{{ state_attr('sensor.cave_a_vin_supersensor', 'vins') | default({}, true) }}"
+      - if:
+          - condition: template
+            value_template: "{{ target_id != '' and target_id in current_vins }}"
+        then:
+          - event: UPDATE_CAVE_FINAL
+            event_data:
+              new_collection: >
+                {% set ns = namespace(new_dict={}) %}
+                {% for key, val in current_vins.items() %}
+                  {% if key == target_id %}
+                    {% set count = [0, (val.nombre_bouteilles | default(0) | int(0) + diff)] | max %}
+                    {% set ns.new_dict = dict(ns.new_dict, **{key: dict(val, **{'nombre_bouteilles': count})}) %}
+                  {% else %}
+                    {% set ns.new_dict = dict(ns.new_dict, **{key: val}) %}
+                  {% endif %}
+                {% endfor %}
+                {{ ns.new_dict }}
+
+  # 5. MISE A JOUR LISTE
+  - alias: "Cave - Mise à jour liste"
+    id: cave_update_select
+    trigger:
+      - platform: state
+        entity_id: sensor.cave_a_vin_supersensor
+      - platform: homeassistant
+        event: start
+    action:
+      - delay: "00:00:05"
+      - action: input_select.set_options
+        target:
+          entity_id: input_select.selection_vin_suppression
+        data:
+          options: >
+            {% set cave = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+            {% if cave is not none and cave.items() | count > 0 %}
+              {% set ns = namespace(items=["Aucun vin"]) %}
+              {% for id, info in cave.items() %}
+                {% set label = id ~ " | " ~ info.nom.valeur ~ " (" ~ info.annee.valeur ~ ")" %}
+                {% set ns.items = ns.items + [label] %}
+              {% endfor %}
+              {{ ns.items }}
+            {% else %}
+              {{ ["Aucun vin"] }}
+            {% endif %}
+
+  # 6. SUPPRESSION
+  - alias: "Cave - Supprimer Vin"
+    id: cave_delete_entry
+    trigger:
+      - platform: state
+        entity_id: input_button.delete_selected_wine
+    action:
+      - variables:
+          selection: "{{ states('input_select.selection_vin_suppression') }}"
+          target_id: "{{ selection.split(' | ')[0] if '|' in selection else '' }}"
+          current_vins: "{{ state_attr('sensor.cave_a_vin_supersensor', 'vins') | default({}, true) }}"
+      - if:
+          - condition: template
+            value_template: "{{ target_id != '' and target_id in current_vins }}"
+        then:
+          - event: UPDATE_CAVE_FINAL
+            event_data:
+              new_collection: >
+                {% set ns = namespace(new_dict={}) %}
+                {% for key, val in current_vins.items() %}
+                  {% if key != target_id %}
+                    {% set ns.new_dict = dict(ns.new_dict, **{key: val}) %}
+                  {% endif %}
+                {% endfor %}
+                {{ ns.new_dict }}
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.selection_vin_suppression
+            data:
+              option: "Aucun vin"
