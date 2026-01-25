@@ -26,7 +26,8 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 1.  **Clé API Google Gemini** : Version gratuite ou non (limite d'usage généreuse), à créer sur [Google AI Studio](https://aistudio.google.com/app/apikey).
 2.  **Intégration Google Generative AI** : Intégration **native** de Home Assistant.
-3.  **Logs Système** : L'intégration `system_log` doit être active (présente par défaut) pour permettre la remontée des erreurs de quota ou de connexion de l'IA.
+    * *Configuration* : Si demandé à l'installation (je n'en suis pas convaincu) nommez l'entité de l'action : `google_ai_task`.
+4.  **Logs Système** : L'intégration `system_log` doit être active (présente par défaut) pour permettre la remontée des erreurs de quota ou de connexion de l'IA.
 
 ## 🚀 Installation
 
