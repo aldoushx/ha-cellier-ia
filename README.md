@@ -67,10 +67,3 @@ recorder:
 3. **Stockage** : Cliquez sur **Ajouter** pour basculer le vin de la recherche vers votre inventaire permanent.
 4. **Gestion** : Déployez "Afficher la gestion de la cave" pour ajuster vos stocks.
 
-
-```
-
-### Prochaines étapes :
-Souhaitez-vous que je crée un fichier pour les **traductions** ou une section **FAQ** à ajouter à ce README ?
-
-```
