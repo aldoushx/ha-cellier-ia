@@ -63,7 +63,7 @@ recorder:
 
 ## 📖 Utilisation
 
-1. **Saisie** : Tapez le nom, la couleur et l'année dans le'interface du dashboard. Cliquez sur **Rechercher le vin**.
+1. **Saisie** : Tapez le nom, la couleur et l'année dans l'interface du dashboard. Cliquez sur **Rechercher le vin**.
 2. **Analyse** : Pendant que l'IA travaille, vous pouvez observer que la demande est bien prise en compte avec un indicateur d'opération. La requête prend environ 10s.
 3. **Stockage** : Quand la recherche est terminée, le vin trouvé est décrit sommairement. Si sa description correspond à l'attendu, cliquez sur **Ajouter le vin à la cave** pour basculer le vin de la recherche vers votre inventaire permanent.
 4. **Gestion** : Déployez "Afficher la gestion de la cave" pour ajuster vos stocks, à l'aide de la liste déroulante et des boutons associés.
