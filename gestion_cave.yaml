@@ -96,7 +96,7 @@ template:
             {{ trigger.event.data.prix_moyen | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.prix_moyen is defined) 
                else '{"valeur": "-", "confiance": "0%"}' }}
 
-  # 2. LE SUPERSENSOR
+  # 2. LE SUPERSENSOR (Persistance des données)
   - trigger:
       - platform: event
         event_type: "UPDATE_CAVE_FINAL"
@@ -144,7 +144,7 @@ template:
           {% endif %}
 
 automation:
-  # 1. IA - RECHERCHE
+  # 1. IA - RECHERCHE AVEC NETTOYAGE JSON ROBUSTE
   - alias: "IA - Recherche Vin Expert V2"
     id: ia_recherche_vin_expert_v2
     mode: restart
@@ -172,30 +172,57 @@ automation:
         then:
           - event: REMPLIR_VIN_RECHERCHE
             event_data:
-              nom: "{{ (gemini_result.data | from_json).nom }}"
-              annee: "{{ (gemini_result.data | from_json).annee }}"
-              couleur: "{{ (gemini_result.data | from_json).couleur }}"
-              cepages: "{{ (gemini_result.data | from_json).cepages }}"
-              note_moyenne: "{{ (gemini_result.data | from_json).note_moyenne }}"
-              appellation: "{{ (gemini_result.data | from_json).appellation }}"
-              provenance: "{{ (gemini_result.data | from_json).provenance }}"
-              garde_conseillee: "{{ (gemini_result.data | from_json).garde_conseillee }}"
-              fenetre_consommation: "{{ (gemini_result.data | from_json).fenetre_consommation }}"
-              apogee: "{{ (gemini_result.data | from_json).apogee }}"
-              date_limite: "{{ (gemini_result.data | from_json).date_limite }}"
+              nom: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).nom }}
+              annee: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).annee }}
+              couleur: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).couleur }}
+              cepages: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).cepages }}
+              note_moyenne: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).note_moyenne }}
+              appellation: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).appellation }}
+              provenance: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).provenance }}
+              garde_conseillee: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).garde_conseillee }}
+              fenetre_consommation: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).fenetre_consommation }}
+              apogee: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).apogee }}
+              date_limite: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).date_limite }}
               prix_moyen:
                 valeur: >
-                  {% set p = (gemini_result.data | from_json).prix_moyen.valeur | string | replace(' ', '') %}
+                  {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                  {% set p = (clean | from_json).prix_moyen.valeur | string | replace(' ', '') %}
                   {{ p.split('-')[0].split(',')[0].split('.')[0] | regex_findall('\d+') | join('') | int | default(0) }}
-                magasins sources: "{{ (gemini_result.data | from_json).prix_moyen['magasins sources'] }}"
-                confiance: "{{ (gemini_result.data | from_json).prix_moyen.confiance }}"
+                magasins sources: >
+                  {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                  {{ (clean | from_json).prix_moyen['magasins sources'] }}
+                confiance: >
+                  {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                  {{ (clean | from_json).prix_moyen.confiance }}
         else:
           - action: input_boolean.turn_on
             target: { entity_id: input_boolean.ia_erreur }
       - action: input_boolean.turn_off
         target: { entity_id: input_boolean.ia_en_cours }
 
-  # 2. CAPTURE ERREURS
+  # 2. CAPTURE ERREURS LOG
   - alias: "Système - Capture Erreur Quota Gemini"
     id: systeme_capture_erreur_quota_gemini
     trigger:
@@ -217,7 +244,7 @@ automation:
         data:
           value: "{{ trigger.event.data.message[0][:250] if trigger.event.data.message[0] is not none else 'Erreur' }}"
 
-  # 3. AJOUTER / RESET
+  # 3. TRANSFERT RECHERCHE -> INVENTAIRE
   - alias: "Cave - Ajouter et Reset Recherche"
     id: cave_ajouter_et_reset
     mode: queued
@@ -248,7 +275,7 @@ automation:
             {{ dict(current_vins, **{entry_id: new_wine}) }}
       - event: VIDER_VIN_RECHERCHE
 
-  # 4. GESTION STOCK
+  # 4. GESTION DES STOCKS
   - alias: "Cave - Ajuster Stock"
     id: cave_ajuster_stock
     trigger:
@@ -278,7 +305,7 @@ automation:
                 {% endfor %}
                 {{ ns.new_dict }}
 
-  # 5. MISE A JOUR LISTE
+  # 5. MISE A JOUR DU SELECTEUR
   - alias: "Cave - Mise à jour liste"
     id: cave_update_select
     trigger:
@@ -305,7 +332,7 @@ automation:
               {{ ["Aucun vin"] }}
             {% endif %}
 
-  # 6. SUPPRESSION
+  # 6. SUPPRESSION D'UNE ENTRÉE
   - alias: "Cave - Supprimer Vin"
     id: cave_delete_entry
     trigger:
@@ -335,3 +362,4 @@ automation:
               entity_id: input_select.selection_vin_suppression
             data:
               option: "Aucun vin"
+              
