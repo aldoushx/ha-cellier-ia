@@ -17,8 +17,8 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
     * 🔴 : Très incertain
 * **Indicateurs d'Apogée** : Un indicateur visuel permet de savoir immédiatement si le vin est en train de maturer, décliner, ou s'il est à son apogée.
     * ⏳ : **À garder** (le vin est trop jeune).
-    * 🍷 : **Prêt à boire** (dans sa fenêtre optimale).
-    * ⚠️ : **À boire rapidement** (proche ou passé la date limite).
+    * 💎 : **Prêt à boire** (dans sa fenêtre optimale).
+    * 🍂 : **À boire rapidement** (proche ou passé la date limite).
 * **Gestion de Stock** : Ajout en un clic depuis la recherche, boutons +1 / -1 et suppression simplifiée.
 * **Statistiques** : Calcul automatique du nombre total de bouteilles en stock et de la valeur estimée de la cave.
 
