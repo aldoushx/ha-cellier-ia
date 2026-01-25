@@ -1,3 +1,5 @@
+# EN COURS D'UPDATE
+
 # Gestionnaire de Cave à vin pour Home Assistant (avec expertise vin Gemini)
 
 Ce package pour Home Assistant permet de gérer un inventaire de 20 emplacements de vins différents. Il récupère les données du vin sur les sites spécialisés automatiquement par un prompt IA (Gemini) pour mettre à disposition des détails œnologiques précis à partir d'une saisie simplifiée (et tolerante, merci au LLM) sur un dashboard de saisie et d'inventaire.
