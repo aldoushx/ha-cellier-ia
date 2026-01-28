@@ -113,7 +113,7 @@ Créez les dossiers suivants dans votre répertoire `/config/` :
 | `ranger_vin.py` | `/config/python_scripts/` | Script de rangement manuel |
 | `autofill_cave.py` | `/config/python_scripts/` | Script de rangement automatique |
 | `empty_cave.py` | `/config/python_scripts/` | Script de vidage complet |
-| `mon_casier.html` | `/config/www/cave/` | Fichier de rendu final |
+| `mon_casier.html` (généré auto) | `/config/www/cave/` | Fichier de rendu final |
 
 ### 3. Configuration du Token API
 Vous devez insérer votre **TOKEN HA** dans la variable `TOKEN = "..."` située au début des fichiers suivants :
