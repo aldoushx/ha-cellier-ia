@@ -116,11 +116,12 @@ Créez les dossiers suivants dans votre répertoire `/config/` (c'est la racine 
 | `mon_casier.html` (généré auto) | `/config/www/cave/` | Fichier de rendu final |
 
 ### 3. Configuration du Token API
-Vous devez insérer votre **TOKEN HA** dans la variable `TOKEN = "..."` située au début des fichiers suivants :
+Vous devez insérer un **TOKEN HA longue durée** dans la variable `TOKEN = "..."` située au début des fichiers suivants :
 * `generate_cave.py`
 * `python_scripts/autofill_cave.py`
 * `python_scripts/empty_cave.py`
 * `python_scripts/analyze_stock.py`
+Pour créer un jeton longue durée, cliquez sur votre nom en bas du menu à gauche dans HA => onglet Securité => (en bas) Jetons d'accès longue durée / créer un jeton.
 
 ## 🚀 Mise en service
 1.  **Installation** : Copiez les fichiers dans l'arborescence créée avec Fil Editor, remplissez votre TOKEN longue durée dans les 4 .py et redémarrez Home Assistant pour charger le package.
