@@ -1,0 +1,89 @@
+type: vertical-stack
+cards:
+  - type: markdown
+    content: >
+      {% set monitor = states.sensor.cave_stock_monitor %} {% set details =
+      state_attr('sensor.cave_stock_monitor', 'details') %} ### 🍷 État de
+      l'Inventaire **Global :** {{ state_attr('sensor.cave_stock_monitor',
+      'total_plan') | default(0) }} / {{ state_attr('sensor.cave_stock_monitor',
+      'total_inv') | default(0) }} bouteilles rangées. --- {% if details %}
+        {% for ligne in details %}
+          {{ ligne }}
+        {% endfor %}
+      {% else %}
+        Chargement de l'analyse...
+      {% endif %}
+  - type: iframe
+    url: /local/cave/mon_casier.html?v6
+    aspect_ratio: 130%
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: input_select.cave_rendu_mode
+        state: Rangement Manuel
+    card:
+      type: entities
+      title: 📥 Gestion Manuelle
+      show_header_toggle: false
+      entities:
+        - entity: input_select.selection_vin_rangement
+        - entity: input_select.selection_case_rangement
+        - type: button
+          name: Placer la bouteille
+          icon: mdi:plus-box
+          tap_action:
+            action: call-service
+            service: script.valider_rangement_bouteille
+        - type: button
+          name: Vider la case
+          icon: mdi:trash-can
+          tap_action:
+            action: call-service
+            service: script.vider_case_cave
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: input_select.cave_rendu_mode
+        state: Remplissage Automatique
+    card:
+      type: horizontal-stack
+      cards:
+        - type: button
+          name: Ranger Tout
+          icon: mdi:auto-fix
+          tap_action:
+            action: call-service
+            service: script.cave_execution_auto_complete
+        - type: button
+          name: Vider Tout
+          icon: mdi:cached
+          tap_action:
+            confirmation:
+              text: Vider tout le plan ?
+            action: call-service
+            service: script.cave_vidage_complet
+  - type: entities
+    title: ⚙️ Configuration & Dimensions
+    show_header_toggle: false
+    state_color: true
+    entities:
+      - entity: input_select.cave_rendu_mode
+        name: Mode d'affichage
+      - entity: input_number.cave_nb_lignes
+      - entity: input_number.cave_nb_colonnes
+  - type: horizontal-stack
+    cards:
+      - type: button
+        name: Sync Liste Vins
+        icon: mdi:database-sync
+        tap_action:
+          action: call-service
+          service: automation.trigger
+          target:
+            entity_id: automation.cave_sync_liste_vins
+      - type: button
+        name: Forcer Visuel
+        icon: mdi:refresh
+        tap_action:
+          action: call-service
+          service: shell_command.update_cave_html
