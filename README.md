@@ -98,7 +98,7 @@ J'ai ajouté une interface de visualisation et de rangement de la cave en lien a
 Copier les fichiers mis à disposition dans le dossier visualisation du github selon l'arborescence décrite ci-dessous.
 
 ### 1. Création des répertoires
-Créez les dossiers suivants dans votre répertoire `/config/` :
+Créez les dossiers suivants dans votre répertoire `/config/` (c'est la racine de HA dans File Editor, la ou se trouve le configuration.yaml) :
 * `/config/python_scripts/` (moteurs de calcul)
 * `/config/packages/` (configuration YAML)
 * `/config/www/cave/` (stockage du rendu HTML)
