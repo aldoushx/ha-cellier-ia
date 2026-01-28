@@ -1,0 +1,155 @@
+# ----------------------------------------------------------------      
+# PACKAGE : GESTION DE LA CAVE À VIN (VERSION ANALYSE STOCK)
+# ----------------------------------------------------------------      
+
+input_number:
+  cave_nb_lignes:
+    name: "Nombre de Lignes"
+    min: 1
+    max: 20
+    step: 1
+    initial: 6
+    icon: mdi:format-list-numbered
+  cave_nb_colonnes:
+    name: "Nombre de Colonnes"
+    min: 1
+    max: 10
+    step: 1
+    initial: 5
+    icon: mdi:view-column
+
+input_select:
+  cave_rendu_mode:
+    name: "Mode d'affichage"
+    options:
+      - "Rangement Manuel"
+      - "Remplissage Automatique"
+    icon: mdi:auto-fix
+  selection_vin_rangement:
+    name: "Vin à ranger"
+    options:
+      - "Chargement..."
+    icon: mdi:bottle-wine
+  selection_case_rangement:
+    name: "Case cible"
+    options:
+      - "1-1"
+    icon: mdi:grid
+
+# --- SURVEILLANCE DES STOCKS ---
+command_line:
+  - sensor:
+      name: "Cave Stock Monitor"
+      unique_id: cave_stock_monitor
+      command: "python3 /config/python_scripts/analyze_stock.py"
+      value_template: "{{ value_json.total_plan }}"
+      json_attributes:
+        - total_inv
+        - total_plan
+        - details
+      scan_interval: 60
+
+# --- COMMANDES SYSTÈME ---
+shell_command:
+  script_ranger_vin: 'python3 /config/python_scripts/ranger_vin.py "{{ case }}" "{{ vin }}"'
+  script_vider_vin: 'python3 /config/python_scripts/ranger_vin.py "{{ case }}" "none"'
+  update_cave_html: 'python3 /config/generate_cave.py'
+  run_autofill_cave: 'python3 /config/python_scripts/autofill_cave.py'
+  run_empty_cave: 'python3 /config/python_scripts/empty_cave.py'
+
+automation:
+  - alias: "Cave - Sync Liste Vins"
+    id: cave_sync_liste_vins_2
+    trigger:
+      - platform: state
+        entity_id: sensor.cave_a_vin_supersensor
+      - platform: homeassistant
+        event: start
+    action:
+      - action: input_select.set_options
+        target:
+          entity_id: input_select.selection_vin_rangement
+        data:
+          options: >
+            {% set vins = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+            {% if vins %}
+              {% set ns = namespace(noms=[]) %}
+              {% for key, data in vins.items() %}
+                {# On combine Nom + Année pour la sélection #}
+                {% set nom_complet = data.nom.valeur ~ " " ~ data.annee.valeur %}
+                {% set ns.noms = ns.noms + [nom_complet | trim] %}
+              {% endfor %}
+              {{ ns.noms | unique | sort | list }}
+            {% else %}
+              ["Aucun vin trouvé"]
+            {% endif %}
+
+  # Sync la liste des cases dynamiquement
+  - alias: "Cave - Sync Liste Cases"
+    id: cave_sync_liste_cases
+    trigger:
+      - platform: state
+        entity_id: 
+          - input_number.cave_nb_lignes
+          - input_number.cave_nb_colonnes
+      - platform: homeassistant
+        event: start
+    action:
+      - action: input_select.set_options
+        target:
+          entity_id: input_select.selection_case_rangement
+        data:
+          options: >
+            {% set L = states('input_number.cave_nb_lignes') | int(6) %}
+            {% set C = states('input_number.cave_nb_colonnes') | int(5) %}
+            {% set ns = namespace(items=[]) %}
+            {% for i in range(1, L + 1) %}
+              {% for j in range(1, C + 1) %}
+                {% set ns.items = ns.items + [ i ~ "-" ~ j ] %}
+              {% endfor %}
+            {% endfor %}
+            {{ ns.items }}
+
+script:
+  # Action de rangement
+  valider_rangement_bouteille:
+    alias: "Valider le rangement"
+    sequence:
+      - action: shell_command.script_ranger_vin
+        data:
+          case: "{{ states('input_select.selection_case_rangement') }}"
+          vin: "{{ states('input_select.selection_vin_rangement') }}"
+      - action: shell_command.update_cave_html
+      - action: homeassistant.update_entity
+        target:
+          entity_id: sensor.cave_stock_monitor
+      
+  # Action de suppression
+  vider_case_cave:
+    alias: "Vider la case"
+    sequence:
+      - action: shell_command.script_vider_vin
+        data:
+          case: "{{ states('input_select.selection_case_rangement') }}"
+      - action: shell_command.update_cave_html
+      - action: homeassistant.update_entity
+        target:
+          entity_id: sensor.cave_stock_monitor
+
+# Le script pour lancer le remplissage automatique
+  cave_execution_auto_complete:
+    alias: "Rangement Automatique"
+    icon: mdi:auto-fix
+    sequence:
+      - service: shell_command.run_autofill_cave
+      - delay: "00:00:01"
+      - service: shell_command.update_cave_html
+
+  # Le script pour vider tout le plan
+  cave_vidage_complet:
+    alias: "Vider toute la cave"
+    icon: mdi:cached
+    sequence:
+      - service: shell_command.run_empty_cave
+      - delay: "00:00:01"
+      - service: shell_command.update_cave_html          
