@@ -120,6 +120,7 @@ Vous devez insérer votre **TOKEN HA** dans la variable `TOKEN = "..."` située 
 * `generate_cave.py`
 * `python_scripts/autofill_cave.py`
 * `python_scripts/empty_cave.py`
+* `python_scripts/analyze_stock.py`
 
 ## 🚀 Mise en service
 1.  **Installation** : Copiez les fichiers et redémarrez Home Assistant pour charger le package.
