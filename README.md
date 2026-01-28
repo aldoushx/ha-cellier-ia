@@ -123,7 +123,7 @@ Vous devez insérer votre **TOKEN HA** dans la variable `TOKEN = "..."` située 
 * `python_scripts/analyze_stock.py`
 
 ## 🚀 Mise en service
-1.  **Installation** : Copiez les fichiers et redémarrez Home Assistant pour charger le package.
+1.  **Installation** : Copiez les fichiers dans l'arborescence créée avec Fil Editor, remplissez votre TOKEN longue durée dans les 4 .py et redémarrez Home Assistant pour charger le package.
 2.  **Dashboard** : Copiez le contenu du fichier carte_visu.yaml dans une carte manuelle sur votre dashboard (dans une autre page que le sommelier IA pour na pas trop charger le dashboard)
 3.  **Initialisation** :
     * Lancez les 2 automatisations `cave_sync_liste_cases' et 'cave_sync_liste_vins` dans le menu des automatisations afin de peupler les listes du dashboard.
