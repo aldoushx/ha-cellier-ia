@@ -121,6 +121,7 @@ Vous devez insérer un **TOKEN HA longue durée** dans la variable `TOKEN = "...
 * `python_scripts/autofill_cave.py`
 * `python_scripts/empty_cave.py`
 * `python_scripts/analyze_stock.py`
+
 Pour créer un jeton longue durée, cliquez sur votre nom en bas du menu à gauche dans HA => onglet Securité => (en bas) Jetons d'accès longue durée / créer un jeton.
 
 ## 🚀 Mise en service
