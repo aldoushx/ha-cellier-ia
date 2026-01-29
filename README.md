@@ -26,6 +26,8 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 * **UPDATE 2** : Un conseil de choix de vin par l'IA a été ajouté, qui propose en fonction du repas entré dans un champs texte, le vin le plus pertinent de votre cave, en tenant compte de son apogée. Une explication et des conseils sont proposés. Une carte du top 5 des priorités à boire est également proposée.
 
+
+
 ## 🛠 Prérequis
 
 1.  **Clé API Google Gemini** : Version gratuite ou non (limite d'usage généreuse), à créer sur [Google AI Studio](https://aistudio.google.com/app/apikey).
