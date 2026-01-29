@@ -1,1 +1,25 @@
+type: markdown
+title: 🍷 À boire en priorité
+content: >
+  {%- set vins = state_attr('sensor.cave_a_vin_supersensor', 'vins') -%} {%- set
+  current_year = now().year -%}
 
+  {# Préparation et tri de la liste #} {%- set ns = namespace(items=[]) -%} {%-
+  for key, data in vins.items() if data.nombre_bouteilles | int > 0 -%}
+    {%- set ns.items = ns.items + [ {
+      'nom': data.nom.valeur,
+      'annee': data.annee.valeur,
+      'apogee': data.apogee.valeur | int
+    } ] -%}
+  {%- endfor -%}
+
+  {# Affichage des 5 premiers après tri par apogée #} {%- for item in ns.items |
+  sort(attribute='apogee') -%}
+    {%- if loop.index <= 5 -%}
+      {%- if item.apogee <= current_year -%}
+        **{{ item.nom }} ({{ item.annee }})** - Apogée {{ item.apogee }}
+      {%- else -%}
+        {{ item.nom }} ({{ item.annee }}) - Apogée {{ item.apogee }}
+      {%- endif %}
+  {% endif -%} {%- endfor -
+  %}
