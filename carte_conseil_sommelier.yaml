@@ -1,1 +1,31 @@
-
+type: vertical-stack
+cards:
+  - type: entities
+    title: 👨‍🍳 Accord Sommelier
+    entities:
+      - entity: input_text.v2_plat_du_jour
+        name: Plat
+      - entity: input_button.v2_bouton_ia_accord
+        name: Lancer le conseil
+  - type: conditional
+    conditions:
+      - entity: input_boolean.ia_en_cours
+        state: "on"
+    card:
+      type: markdown
+      content: ⏳ *Le sommelier analyse votre cave...*
+  - type: conditional
+    conditions:
+      - entity: input_boolean.ia_en_cours
+        state: "off"
+    card:
+      type: markdown
+      content: |
+        {% if is_state('input_boolean.ia_erreur', 'on') %}
+          ❌ Erreur lors de l'accord.
+        {% else %}
+          **Le conseil du Sommelier :**
+          
+          {{ state_attr('sensor.ia_sommelier_accord', 'reponse') }}
+        {% endif %}
+        
