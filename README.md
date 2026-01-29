@@ -22,6 +22,10 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * **Gestion de Stock** : Ajout en un clic depuis la recherche, boutons +1 / -1 et suppression simplifiée.
 * **Statistiques** : Calcul automatique du nombre total de bouteilles en stock et de la valeur estimée de la cave.
 
+* **UPDATE 1** : Facultatif - Un module de visualisation et rangement de cave a été ajouté, ce n'est que du frontend, indépendant du package précédent (hormis les données qu'il récupère du supersensor en lecture). Voir dans la partie BONUS plus bas son fonctionnement et son installation.
+
+* **UPDATE 2** : Un conseil de choix de vin par l'IA a été ajouté, qui propose en fonction du repas entré dans un champs texte, le vin le plus pertinent de votre cave, en tenant compte de son apogée. Une explication et des conseils sont proposés. Une carte du top 5 des priorités à boire est également proposée.
+
 ## 🛠 Prérequis
 
 1.  **Clé API Google Gemini** : Version gratuite ou non (limite d'usage généreuse), à créer sur [Google AI Studio](https://aistudio.google.com/app/apikey).
@@ -60,6 +64,15 @@ recorder:
 2. Cliquez sur les trois points (en haut à droite) > **Modifier le tableau de bord**.
 3. Cliquez à nouveau sur les trois points > **Éditeur de code**.
 4. Copiez et collez le contenu du fichier `dashboard_v2.yaml`.
+
+### 4. Installation des nouvelles fonctions
+
+Pour la partie visualisation et rangement de la cave, voir ci-dessous.
+
+Pour la partie Accords mets et vins, le package gestion_cave.yaml a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier /packages le précédent, puis de relancer votre configuration yaml compkete dans les outils de développement pour créer les nouveaux éléments.
+
+Ensuite, copiez le contenu des 2 fichiers cartes (carte_priorites_apogees.yaml et carte_accords_mets_vins.yaml) dans 2 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 2 cartes manuelles).
+
 
 ## 📖 Utilisation
 
