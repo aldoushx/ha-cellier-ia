@@ -8,7 +8,10 @@ input_text:
     name: "Année"
   derniere_erreur_gemini:
     name: "Dernière Erreur Gemini"
-
+  v2_plat_du_jour:
+    name: "Plat à accompagner"
+    icon: mdi:silverware-fork-knife
+    
 input_button:
   v2_bouton_ia:
     name: "Lancer IA"
@@ -22,7 +25,10 @@ input_button:
     name: "- 1"
   delete_selected_wine:
     name: "Supprimer"
-
+  v2_bouton_ia_accord:
+    name: "Lancer IA Accord"
+    icon: mdi:chef-hat
+    
 input_select:
   selection_vin_suppression:
     name: "Choisir un vin"
@@ -143,6 +149,18 @@ template:
             0
           {% endif %}
 
+  # SENSOR POUR RÉPONSE LONGUE DU SOMMELIER
+  - trigger:
+      - platform: event
+        event_type: "EVENT_ACCORD_IA_REUSSI"
+    sensor:
+      - name: "IA Sommelier Accord"
+        unique_id: ia_sommelier_accord
+        icon: mdi:robot-wine
+        state: "Prêt"
+        attributes:
+          reponse: "{{ trigger.event.data.reponse }}"
+          
 automation:
   # 1. IA - RECHERCHE AVEC NETTOYAGE JSON ROBUSTE
   - alias: "IA - Recherche Vin Expert V2"
@@ -362,4 +380,49 @@ automation:
               entity_id: input_select.selection_vin_suppression
             data:
               option: "Aucun vin"
-              
+
+  - alias: "IA - Accord Mets Expert V2"
+    id: ia_accord_mets_expert_v2
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: input_button.v2_bouton_ia_accord
+    action:
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_on
+        target: { entity_id: input_boolean.ia_en_cours }
+      - action: ai_task.generate_data
+        data:
+          entity_id: ai_task.google_ai_task
+          task_name: accord mets vins
+          instructions: >-
+            Agis comme un sommelier expert. Ta réponse doit être uniquement un dictionnaire JSON pur.
+            
+            MA CAVE :
+            {% set vins = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+            {%- for key, info in vins.items() if info.nombre_bouteilles | int > 0 -%}
+              - {{ info.nom.valeur }} ({{ info.annee.valeur }}), {{ info.appellation.valeur }}, Apogée: {{ info.apogee.valeur }}
+            {%- endfor %}
+
+            ANALYSE POUR LE PLAT : "{{ states('input_text.v2_plat_du_jour') }}"
+            ANNÉE ACTUELLE : {{ now().year }}
+
+            STRUCTURE : {"choix": "Nom + Année", "raison": "Explication détaillée", "service": "Carafe/Température"}
+        response_variable: accord_result
+
+      - if:
+          - condition: template
+            value_template: "{{ accord_result.data is defined and accord_result.data | length > 20 }}"
+        then:
+          - event: EVENT_ACCORD_IA_REUSSI
+            event_data:
+              reponse: >
+                {% set res = accord_result.data | replace('```json', '') | replace('```', '') | trim | from_json %}
+                {{ res.choix }} : {{ res.raison }} ({{ res.service }})
+        else:
+          - action: input_boolean.turn_on
+            target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_en_cours }
+        
