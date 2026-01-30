@@ -71,9 +71,9 @@ recorder:
 
 Pour la partie visualisation et rangement de la cave, voir ci-dessous.
 
-Pour la partie Accords mets et vins, le package 'gestion_cave.yaml' a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier /packages le précédent, puis de relancer votre configuration yaml compkete dans les outils de développement pour créer les nouveaux éléments.
+Pour la partie Accords mets et vins, le package `gestion_cave.yaml` a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier `/packages` le précédent, puis de relancer votre configuration yaml complète dans les outils de développement pour créer les nouveaux éléments.
 
-Ensuite, copiez le contenu des 2 fichiers cartes ('carte_priorites_apogees.yaml' et 'carte_conseil_sommelier.yaml') dans 2 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 2 cartes manuelles).
+Ensuite, copiez le contenu des 2 fichiers cartes (`carte_priorites_apogees.yaml` et `carte_conseil_sommelier.yaml`) dans 2 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 2 cartes manuelles).
 
 
 ## 📖 Utilisation
@@ -82,6 +82,7 @@ Ensuite, copiez le contenu des 2 fichiers cartes ('carte_priorites_apogees.yaml'
 2. **Analyse** : Pendant que l'IA travaille, vous pouvez observer que la demande est bien prise en compte avec un indicateur d'opération. La requête prend environ 10s.
 3. **Stockage** : Quand la recherche est terminée, le vin trouvé est décrit sommairement. Si sa description correspond à l'attendu, cliquez sur **Ajouter le vin à la cave** pour basculer le vin de la recherche vers votre inventaire permanent.
 4. **Gestion** : Déployez "Afficher la gestion de la cave" pour ajuster vos stocks, à l'aide de la liste déroulante et des boutons associés.
+5. **Conseils du sommelier** : Entrez votre repas dans le champs texte et lancez la recherche IA. La réponse arrivera sous 15s.
 
 ----------------------------
 
