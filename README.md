@@ -26,7 +26,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 * **UPDATE 2** : Un module de conseil d'accord mets et vins par l'IA a été ajouté, qui propose en fonction du repas entré dans un champs texte, le vin le plus pertinent de votre cave, en tenant compte de sa maturité et de son profil. Une explication du choix et des conseils de service sont proposés. Une carte du top 5 des priorités à boire est également fournie sur la base de leur année d'apogée.
 
-* **UPDATE 3** : Un module de conseil d'achat par l'IA a été ajouté, qui propose de compléter la cave avec des vins complémentaires de ceux présents dans la cave de l'utilisateur en termes de styles et de périodes de maturation. Il permet d'entrer un prix maximal et une région privilégiée a choisir dans une liste déroulante.
+* **UPDATE 3** : Un module de conseil d'achat par l'IA a été ajouté, qui propose de compléter sa cave avec des vins complémentaires de ceux de la base de données de l'utilisateur, en termes de styles et de périodes de maturation. Il permet d'entrer un prix maximal et une région privilégiée a choisir dans une liste déroulante.
 
 
 
