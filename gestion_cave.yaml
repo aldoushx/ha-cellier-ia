@@ -12,6 +12,16 @@ input_text:
     name: "Plat à accompagner"
     icon: mdi:silverware-fork-knife
     
+input_number:
+  v2_budget_max_achat:
+    name: "Budget Max / Bouteille"
+    min: 10
+    max: 500
+    step: 5
+    unit_of_measurement: "€"
+    icon: mdi:cash-multiple
+    mode: box
+
 input_button:
   v2_bouton_ia:
     name: "Lancer IA"
@@ -28,12 +38,29 @@ input_button:
   v2_bouton_ia_accord:
     name: "Lancer IA Accord"
     icon: mdi:chef-hat
+  v2_bouton_audit_cave:
+    name: "Analyser Stratégie Achat"
+    icon: mdi:finance
     
 input_select:
   selection_vin_suppression:
     name: "Choisir un vin"
     options: ["Aucun vin"]
-
+  v2_priorite_region:
+    name: "Région à privilégier"
+    icon: mdi:map-marker-path
+    options:
+      - "Toutes"
+      - "Bordeaux"
+      - "Bourgogne"
+      - "Vallée du Rhône"
+      - "Loire"
+      - "Alsace"
+      - "Languedoc-Roussillon"
+      - "Provence"
+      - "Champagne"
+      - "Étranger"
+      
 input_boolean:
   ia_en_cours:
     name: "IA en cours"
@@ -52,7 +79,19 @@ input_boolean:
     icon: mdi:help-circle-outline
 
 template:
-  # 1. LE SENSOR DE RECHERCHE
+  # STOCKAGE DU RAPPORT D'AUDIT IA
+  - trigger:
+      - platform: event
+        event_type: "EVENT_AUDIT_IA_REUSSI"
+    sensor:
+      - name: "IA Sommelier Audit Cave"
+        unique_id: ia_sommelier_audit_cave
+        icon: mdi:chart-line
+        state: "Prêt"
+        attributes:
+          conseils: "{{ trigger.event.data.conseils }}"
+          
+          # 1. LE SENSOR DE RECHERCHE
   - trigger:
       - platform: event
         event_type: "REMPLIR_VIN_RECHERCHE"
@@ -423,6 +462,60 @@ automation:
         else:
           - action: input_boolean.turn_on
             target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_en_cours }
+
+  - alias: "IA - Audit Stratégique Cave Synthétique"
+    id: ia_audit_strategique_cave_unique_v3 # ID Unique pour éviter les conflits
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: input_button.v2_bouton_audit_cave # Trigger spécifique
+    action:
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_erreur }
+      - action: input_boolean.turn_on
+        target: { entity_id: input_boolean.ia_en_cours }
+      
+      - action: ai_task.generate_data
+        data:
+          entity_id: ai_task.google_ai_task
+          task_name: audit express 5 vins
+          instructions: >-
+            Agis en sommelier conseil. Analyse ma cave (Année {{ now().year }}) :
+            {% set vins = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+            {%- for key, info in vins.items() if info.nombre_bouteilles | int > 0 -%}
+              - {{ info.nom.valeur }}, {{ info.appellation.valeur }}, {{ info.couleur.valeur }}, Apogée: {{ info.apogee.valeur }}
+            {%- endfor %}
+
+            CONSIGNES :
+            1. Analyse l'équilibre (couleurs et maturité).
+            2. Propose exactement 5 vins sous le seuil de {{ states('input_number.v2_budget_max_achat') }}€, avec l'intervalle de millesimes a viser pour equilibrer la cave.
+            3. Région prioritaire : {{ states('input_select.v2_priorite_region') }}.
+
+            FORMAT JSON OBLIGATOIRE : 
+            {
+              "bilan": "Une phrase synthétique.",
+              "achats": "\n1. [Nom] ([Appellation]) - [Couleur] - [Prix] : [Utilité]\n2. [Vin 2]...\n3. [Vin 3]...\n4. [Vin 4]...\n5. [Vin 5]..."
+            }
+        response_variable: audit_result
+
+      - if:
+          - condition: template
+            value_template: "{{ audit_result.data is defined and audit_result.data | length > 20 }}"
+        then:
+          - event: EVENT_AUDIT_IA_REUSSI
+            event_data:
+              conseils: >
+                {% set res = audit_result.data | replace('```json', '') | replace('```', '') | trim | from_json %}
+                **Bilan :** {{ res.bilan }}
+
+                **Suggestions (<{{ states('input_number.v2_budget_max_achat') }}€) :**
+                {{ res.achats }}
+        else:
+          - action: input_boolean.turn_on
+            target: { entity_id: input_boolean.ia_erreur }
+            
       - action: input_boolean.turn_off
         target: { entity_id: input_boolean.ia_en_cours }
         
