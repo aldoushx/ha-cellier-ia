@@ -1,0 +1,28 @@
+type: vertical-stack
+cards:
+  - type: entities
+    title: 📊 Conseil d'Achat
+    entities:
+      - entity: input_select.v2_priorite_region
+      - entity: input_number.v2_budget_max_achat
+      - entity: input_button.v2_bouton_audit_cave
+        name: Lancer l'Audit
+  - type: conditional
+    conditions:
+      - entity: input_boolean.ia_en_cours
+        state: "on"
+    card:
+      type: markdown
+      content: ⏳ *Le sommelier analyse la cave...*
+  - type: conditional
+    conditions:
+      - entity: input_boolean.ia_en_cours
+        state: "off"
+    card:
+      type: markdown
+      content: |
+        {% if is_state('input_boolean.ia_erreur', 'on') %}
+          ❌ Erreur lors de l'analyse.
+        {% elif state_attr('sensor.ia_sommelier_audit_cave', 'conseils') %}
+          {{ state_attr('sensor.ia_sommelier_audit_cave', 'conseils') }}
+        {% endif %}
