@@ -44,7 +44,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * Placez le fichier `gestion_cave.yaml` dans ce dossier `packages/`.
 
 ### 2. Configuration du `configuration.yaml`
-Ajoutez les lignes suivantes pour activer le système et protéger votre base de données contre le gonflement inutile (l'IA est gourmande en log...) :
+* Ajoutez les lignes suivantes pour activer le système et protéger votre base de données contre le gonflement inutile (l'IA est gourmande en log...) :
 
 ```yaml
 homeassistant:
@@ -62,6 +62,9 @@ recorder:
 
 ```
 
+* Redémarrez Home Assistant pour prendre en compte les modifications du fichier et l'ajout du dossier des packages.
+
+
 ### 3. Installation du Dashboard
 
 1. Créez une nouvelle vue dans votre tableau de bord.
@@ -73,7 +76,7 @@ recorder:
 
 Pour la partie visualisation et rangement de la cave, voir ci-dessous.
 
-Pour la partie Accords mets et vins et Conseil d'achat, le package `gestion_cave.yaml` a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier `/packages` le précédent (si vous aviez deja installé une version), puis de relancer votre configuration yaml complète dans les outils de développement pour créer les nouveaux éléments.
+Pour la partie Accords mets et vins et Conseil d'achat, le package `gestion_cave.yaml` a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier `/packages` le précédent (si vous aviez deja installé une version), puis de relancer votre configuration yaml complète dans les outils de développement pour créer les nouveaux éléments, ou redémarrez Home Assistant.
 
 Ensuite, copiez le contenu des 3 fichiers cartes (`carte_priorites_apogees.yaml`, `carte_conseil_sommelier.yaml`, `carte_conseil_achats.yaml`) dans 3 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 3 cartes manuelles, ce sont des piles verricales).
 
