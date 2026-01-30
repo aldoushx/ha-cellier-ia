@@ -26,6 +26,8 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 * **UPDATE 2** : Un conseil de choix de vin par l'IA a été ajouté, qui propose en fonction du repas entré dans un champs texte, le vin le plus pertinent de votre cave, en tenant compte de son apogée. Une explication et des conseils sont proposés. Une carte du top 5 des priorités à boire est également proposée.
 
+* **UPDATE 3** : Un module de conseil d'achat par l'IA a été ajouté, qui propose de compléter la cave avec des vins complémentaires de ceux présents dans la cave de l'utilisateur en termes de styles et de périodes de maturation. Il permet d'entrer un prix maximal et une région privilégiée a choisir dans une liste déroulante.
+
 
 
 ## 🛠 Prérequis
@@ -71,9 +73,9 @@ recorder:
 
 Pour la partie visualisation et rangement de la cave, voir ci-dessous.
 
-Pour la partie Accords mets et vins, le package `gestion_cave.yaml` a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier `/packages` le précédent, puis de relancer votre configuration yaml complète dans les outils de développement pour créer les nouveaux éléments.
+Pour la partie Accords mets et vins et Conseil d'achat, le package `gestion_cave.yaml` a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier `/packages` le précédent (si vous aviez deja installé une version), puis de relancer votre configuration yaml complète dans les outils de développement pour créer les nouveaux éléments.
 
-Ensuite, copiez le contenu des 2 fichiers cartes (`carte_priorites_apogees.yaml` et `carte_conseil_sommelier.yaml`) dans 2 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 2 cartes manuelles).
+Ensuite, copiez le contenu des 3 fichiers cartes (`carte_priorites_apogees.yaml`, `carte_conseil_sommelier.yaml`, `carte_conseil_achats.yaml`) dans 3 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 3 cartes manuelles, ce sont des piles verricales).
 
 
 ## 📖 Utilisation
@@ -82,7 +84,7 @@ Ensuite, copiez le contenu des 2 fichiers cartes (`carte_priorites_apogees.yaml`
 2. **Analyse** : Pendant que l'IA travaille, vous pouvez observer que la demande est bien prise en compte avec un indicateur d'opération. La requête prend environ 10s.
 3. **Stockage** : Quand la recherche est terminée, le vin trouvé est décrit sommairement. Si sa description correspond à l'attendu, cliquez sur **Ajouter le vin à la cave** pour basculer le vin de la recherche vers votre inventaire permanent.
 4. **Gestion** : Déployez "Afficher la gestion de la cave" pour ajuster vos stocks, à l'aide de la liste déroulante et des boutons associés.
-5. **Conseils du sommelier** : Entrez votre repas dans le champs texte et lancez la recherche IA. La réponse arrivera sous 15s.
+5. **Conseils du sommelier** : Entrez votre repas dans le champs texte et lancez la recherche IA. La réponse arrivera sous 15s. Idem pour les conseils d'achats, les champs sont suffisamment explicites !
 
 ----------------------------
 
