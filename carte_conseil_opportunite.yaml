@@ -1,0 +1,29 @@
+type: vertical-stack
+cards:
+  - type: entities
+    title: 🧐 Test d'Opportunité
+    entities:
+      - entity: input_text.v2_vin_convoite
+        name: Nom du vin visé
+      - entity: input_button.v2_bouton_test_achat
+        name: Comparer à ma cave
+  - type: conditional
+    conditions:
+      - entity: input_boolean.ia_en_cours
+        state: "on"
+    card:
+      type: markdown
+      content: ⏳ *Analyse comparative en cours...*
+  - type: conditional
+    conditions:
+      - entity: input_boolean.ia_en_cours
+        state: "off"
+    card:
+      type: markdown
+      content: |
+        {% if state_attr('sensor.ia_sommelier_opportunite_achat', 'analyse') %}
+          {{ state_attr('sensor.ia_sommelier_opportunite_achat', 'analyse') }}
+        {% else %}
+          *Entrez un nom de vin pour tester sa pertinence face à votre stock.*
+        {% endif %}
+        
