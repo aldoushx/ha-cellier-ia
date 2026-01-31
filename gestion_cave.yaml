@@ -591,5 +591,5 @@ automation:
                 **🚀 Verdict :** {{ res.verdict }}
       
       - action: input_boolean.turn_off
-        target: { entity_id: input_boolean.ia_en_
-        cours }
+        target: { entity_id: input_boolean.ia_en_cours }
+
