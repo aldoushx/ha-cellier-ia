@@ -11,7 +11,10 @@ input_text:
   v2_plat_du_jour:
     name: "Plat à accompagner"
     icon: mdi:silverware-fork-knife
-    
+  v2_vin_convoite:
+    name: "Vin à tester"
+    icon: mdi:cart-search
+
 input_number:
   v2_budget_max_achat:
     name: "Budget Max / Bouteille"
@@ -41,7 +44,10 @@ input_button:
   v2_bouton_audit_cave:
     name: "Analyser Stratégie Achat"
     icon: mdi:finance
-    
+  v2_bouton_test_achat:
+    name: "Vérifier l'opportunité"
+    icon: mdi:scale-balance
+
 input_select:
   selection_vin_suppression:
     name: "Choisir un vin"
@@ -79,6 +85,16 @@ input_boolean:
     icon: mdi:help-circle-outline
 
 template:
+  - trigger:
+      - platform: event
+        event_type: "EVENT_OPPORTUNITE_IA_REUSSI" # Nouvel événement dédié
+    sensor:
+      - name: "IA Sommelier Opportunité Achat"
+        unique_id: ia_sommelier_opportunite_achat
+        icon: mdi:scale-balance
+        state: "Prêt"
+        attributes:
+          analyse: "{{ trigger.event.data.analyse }}"
   # STOCKAGE DU RAPPORT D'AUDIT IA
   - trigger:
       - platform: event
@@ -518,4 +534,62 @@ automation:
             
       - action: input_boolean.turn_off
         target: { entity_id: input_boolean.ia_en_cours }
-        
+  
+  - alias: "IA - Aide à l'Achat Comparatrice"
+    id: ia_aide_achat_comparatrice_v2
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: input_button.v2_bouton_test_achat
+    action:
+      - action: input_boolean.turn_on
+        target: { entity_id: input_boolean.ia_en_cours }
+      
+      - action: ai_task.generate_data
+        data:
+          entity_id: ai_task.google_ai_task
+          task_name: analyse_opportunite_complete
+          instructions: >-
+            Expert en vin, analyse ce projet d'achat : {{ states('input_text.v2_vin_convoite') }}.
+            
+            MA CAVE ACTUELLE :
+            {% set vins = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+            {%- for key, info in vins.items() if info.nombre_bouteilles | int > 0 -%}
+              - {{ info.nom.valeur }} ({{ info.appellation.valeur }}), {{ info.couleur.valeur }}, Apogée: {{ info.apogee.valeur }}
+            {%- endfor %}
+
+            MISSIONS SUPPLÉMENTAIRES :
+            1. PRIX : Estime un prix d'achat conseillé (moyenne du marché actuel).
+            2. MILLÉSIME : En fonction de ma cave, quel millésime de ce vin devrais-je viser (pour boire bientôt ou pour garder longtemps selon mes manques) ?
+
+            RÉPONSE JSON STRICTE :
+            {
+              "ressemblance": "Vin proche en cave + pourquoi",
+              "pertinence": "Doublon ou manque ? (court)",
+              "prix_conseille": "X € (basé sur [source])",
+              "millesime_vise": "Année + raison stratégique",
+              "verdict": "ACHAT VALIDÉ ou DÉCONSEILLÉ + raison"
+            }
+        response_variable: opportunite_result
+
+      - if:
+          - condition: template
+            value_template: "{{ opportunite_result.data is defined }}"
+        then:
+          - event: EVENT_OPPORTUNITE_IA_REUSSI
+            event_data:
+              analyse: >
+                {% set res = opportunite_result.data | replace('```json', '') | replace('```', '') | trim | from_json %}
+                **🔍 Ressemblance :** {{ res.ressemblance }}
+
+                **⚖️ Analyse :** {{ res.pertinence }}
+
+                **💰 Prix conseillé :** {{ res.prix_conseille }}
+
+                **📅 Millésime à viser :** {{ res.millesime_vise }}
+
+                **🚀 Verdict :** {{ res.verdict }}
+      
+      - action: input_boolean.turn_off
+        target: { entity_id: input_boolean.ia_en_
+        cours }
