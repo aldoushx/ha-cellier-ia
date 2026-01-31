@@ -28,6 +28,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 * **UPDATE 3** : Un module de conseil d'achat par l'IA a été ajouté, qui propose de compléter sa cave avec des vins complémentaires de ceux de la base de données de l'utilisateur, en termes de styles et de périodes de maturation. Il permet d'entrer un prix maximal et une région privilégiée a choisir dans une liste déroulante.
 
+* **UPDATE 4** : Un module de conseil d'opportunité d'achat par l'IA a été ajouté : l'utilisateur entre les références d'un vin qu'il voit en magasin ou catalogue, et le sommelier IA sonde la cave pour analyser si ce vin fait doublon avec un autre en termes de style. Un millésime et un prix à viser sont conseillés, et l'achat est validé ou non.
 
 
 ## 🛠 Prérequis
@@ -78,7 +79,7 @@ Pour la partie visualisation et rangement de la cave, voir ci-dessous.
 
 Pour la partie Accords mets et vins et Conseil d'achat, le package `gestion_cave.yaml` a été modifié pour prendre en compte les nouvelles entités et automations, il suffit de remplacer dans le dossier `/packages` le précédent (si vous aviez deja installé une version), puis de relancer votre configuration yaml complète dans les outils de développement pour créer les nouveaux éléments, ou redémarrez Home Assistant.
 
-Ensuite, copiez le contenu des 3 fichiers cartes (`carte_priorites_apogees.yaml`, `carte_conseil_sommelier.yaml`, `carte_conseil_achats.yaml`) dans 3 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 3 cartes manuelles, ce sont des piles verricales).
+Ensuite, copiez le contenu des 4 fichiers cartes (`carte_priorites_apogees.yaml`, `carte_conseil_sommelier.yaml`, `carte_conseil_achats.yaml`, `carte_conseil_opportunite.yaml`) dans 4 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 4 cartes manuelles, ce sont des piles verticales).
 
 
 ## 📖 Utilisation
@@ -87,11 +88,11 @@ Ensuite, copiez le contenu des 3 fichiers cartes (`carte_priorites_apogees.yaml`
 2. **Analyse** : Pendant que l'IA travaille, vous pouvez observer que la demande est bien prise en compte avec un indicateur d'opération. La requête prend environ 10s.
 3. **Stockage** : Quand la recherche est terminée, le vin trouvé est décrit sommairement. Si sa description correspond à l'attendu, cliquez sur **Ajouter le vin à la cave** pour basculer le vin de la recherche vers votre inventaire permanent.
 4. **Gestion** : Déployez "Afficher la gestion de la cave" pour ajuster vos stocks, à l'aide de la liste déroulante et des boutons associés.
-5. **Conseils du sommelier** : Entrez votre repas dans le champs texte et lancez la recherche IA. La réponse arrivera sous 15s. Idem pour les conseils d'achats, les champs sont suffisamment explicites !
+5. **Conseils du sommelier** : Entrez votre repas dans le champs texte et lancez la recherche IA. La réponse arrivera sous 15s. Idem pour les conseils d'achats et les opportunités, les champs sont suffisamment explicites !
 
 ----------------------------
 
-# BONUS : Visualisation de la cave à vin et rangement
+# BONUS FRONTEND (facultatif et à améliorer) : Visualisation de la cave à vin et rangement
 
 <img width="725" height="580" alt="image" src="https://github.com/user-attachments/assets/6f794bbb-56c6-4faa-93e2-37d1c2b1f19a" />
 
