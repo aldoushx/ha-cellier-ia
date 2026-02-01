@@ -110,6 +110,15 @@ automation:
             {% endfor %}
             {{ ns.items }}
 
+  - alias: "Visualisation - Refresh sur sélection IA"
+    id: visu_refresh_ia
+    trigger:
+      - platform: state
+        entity_id: input_text.v2_vin_highlight
+    action:
+      # On lance la commande de génération définie dans vos shell_commands
+      - action: shell_command.update_cave_html
+      
 script:
   # Action de rangement
   valider_rangement_bouteille:
