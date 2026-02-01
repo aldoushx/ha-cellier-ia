@@ -30,6 +30,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 * **UPDATE 4** : Un module de conseil d'opportunité d'achat par l'IA a été ajouté : l'utilisateur entre les références d'un vin qu'il voit en magasin ou catalogue, et le sommelier IA sonde la cave pour analyser si ce vin fait doublon avec un autre en termes de style. Un millésime et un prix à viser sont conseillés, et l'achat est validé ou non.
 
+* **UPDATE 5** : 1) Le module de conseil d'achat et d'opportunité conseillent maintenant un nombre de bouteilles à acheter de chaque vin proposé ou validé pour améliorer l'équilibre de la cave. 2) Le module d'accords mets et vins indique maintenant par une mise en surbrillance dans le frontend de visualisation de la cave les bouteilles conseillées, afin de permettre à l'utilisateur de les trouver facilement dans la cave physique.
 
 ## 🛠 Prérequis
 
@@ -97,13 +98,14 @@ Ensuite, copiez le contenu des 4 fichiers cartes (`carte_priorites_apogees.yaml`
 <img width="725" height="580" alt="image" src="https://github.com/user-attachments/assets/6f794bbb-56c6-4faa-93e2-37d1c2b1f19a" />
 
 
-J'ai ajouté une interface de visualisation et de rangement de la cave en lien avec le stock de bouteilles de la première page, qui permet de configurer la taille de sa cave et d'y ranger les bouteilles selon leur position physique réelle. 
+J'ai ajouté une interface de visualisation et de rangement de la cave en lien avec le stock de bouteilles de la première page, qui permet de configurer la taille de sa cave et d'y ranger les bouteilles selon leur position physique réelle. Le module d'accords mets et vins signale par une surbrillance les bouteilles qu'il conseille dans ce frontend.
 
 ## 🌟 Fonctions principales
 * **Visualisation** : Rendu HTML des bouteilles avec codes couleurs (Rouge, Blanc, Rose).
 * **Mode Manuel** : Placement précis bouteille par bouteille via listes déroulantes.
 * **Mode Automatique** : Remplissage auto groupant les bouteilles par couleur pour un rendu uniquemnt esthétique.
 * **Monitoring** : Comparaison en direct entre l'inventaire du supersensor et les bouteilles rangées de la visualisation, afin d'alerter sur des bouteilles non rangées ou consommées.
+* **Identification** : Affichage en surbrillance des vins conseillés par le module d'accords mets / vins dans la cave pour permettre à l'utilisateur de les trouver rapidement dans sa cave physique.
 
 ## ⚙️ Fonctionnement utilisateur
 1.  **Inventaire** : Vos vins sont déclarés dans le `sensor.cave_a_vin_supersensor` de la partie "sommelier IA" du projet. Un cadre markdown détaille les bouteilles non rangées ou en trop dans la visualisation en synchronisation avec le supersensor.
@@ -111,7 +113,7 @@ J'ai ajouté une interface de visualisation et de rangement de la cave en lien a
 3.  **Rangement** : 2 modes de rangement : manuel et auto
     * **Manuel** : Choisissez un vin dans la liste et une coordonnée (ex: `1-2`). Le script met à jour `cave_plan.json` et régénère l'affichage (à mettre à jour avec le bouton de la visu).
     * **Automatique** : Des boutons permettent de vider la cave et de replacer tout le stock disponible en triant par couleur.
-4.  **Visualisation** : Une carte Iframe affiche le fichier HTML généré. Un bouton "Actualiser" est intégré au visuel pour le rafraîchissement (2 clicks peuvent être nécessaires...).
+4.  **Visualisation** : Une carte Iframe affiche le fichier HTML généré. Un bouton "Actualiser" est intégré au visuel pour le rafraîchissement (2 clicks peuvent être nécessaires...je ne sais pas pourquoi !).
 
 
 
@@ -153,4 +155,4 @@ Pour créer un jeton longue durée, cliquez sur votre nom en bas du menu à gauc
     * Lancez les 2 automatisations `cave_sync_liste_cases' et 'cave_sync_liste_vins` dans le menu des automatisations afin de peupler les listes du dashboard.
     * Lancez le script `script.cave_vidage_complet` dans l'onglet Actions du menu Outils de développement pour créer le fichier plan initial.
 4.  **Premier Rendu** : Cliquez sur **"Forcer Visuel"** dans votre interface pour générer le fichier HTML.
-5.  **Ajustage** : Si le bas de la cave est coupé dans l'Iframe, augmentez la valeur `aspect_ratio` (ex: `150%`) dans la configuration de votre carte Lovelace.
+5.  **Ajustage** : Si le bas de la cave est coupé dans l'Iframe, augmentez la valeur `aspect_ratio` (ex: `180%`) dans la configuration de votre carte Lovelace.
