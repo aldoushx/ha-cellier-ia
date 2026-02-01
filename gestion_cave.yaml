@@ -14,9 +14,9 @@ input_text:
   v2_vin_convoite:
     name: "Vin à tester"
     icon: mdi:cart-search
-  v2_vin_convoite:
-    name: "Vin à tester"
-    icon: mdi:cart-search
+  v2_vin_highlight:
+    name: "Vin identifié par l'IA"
+    icon: mdi:target
     
 input_number:
   v2_budget_max_achat:
@@ -595,5 +595,6 @@ automation:
       
       - action: input_boolean.turn_off
         target: { entity_id: input_boolean.ia_en_cours }
+
 
 
