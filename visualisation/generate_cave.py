@@ -8,6 +8,7 @@ TOKEN = "VOTRE_TOKEN_ICI"
 URL_BASE = "http://localhost:8123/api/states/"
 PATH_PLAN = "/config/cave_plan.json"
 PATH_HTML = "/config/www/cave/mon_casier.html"
+ENTITY_HIGHLIGHT = "input_text.v2_vin_highlight"
 
 def slugify(text):
     """ Normalise le texte pour garantir la correspondance (accents, espaces, casse) """
@@ -30,16 +31,22 @@ def get_ha_state(entity_id):
 
 def generate():
     try:
-        # 1. Extraction des données du Sensor et des Dimensions
+        # 1. Extraction des données (Sensor, Dimensions et Highlight)
         data_inv = get_ha_state("sensor.cave_a_vin_supersensor")
         data_l = get_ha_state("input_number.cave_nb_lignes")
         data_c = get_ha_state("input_number.cave_nb_colonnes")
+        data_h = get_ha_state(ENTITY_HIGHLIGHT)
         
         if not data_inv: return
 
         lignes = int(float(data_l['state'])) if data_l else 10
         colonnes = int(float(data_c['state'])) if data_c else 6
+        
+        # Identification du vin à mettre en évidence (slugifié)
+        vin_a_surligner = slugify(data_h['state']) if data_h and data_h['state'] not in ['unknown', 'none', ''] else None
 
+        print(f"DEBUG: Vin à surligner reçu : '{vin_a_surligner}'")
+        
         # 2. Construction du dictionnaire de couleurs
         mapping_couleurs = {}
         vins_dict = data_inv.get('attributes', {}).get('vins', {})
@@ -62,19 +69,33 @@ def generate():
         html = f"""<!DOCTYPE html><html><head><meta charset='UTF-8'>
         <style>
             html, body {{ background: white; margin: 0; padding: 0; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }}
-            .btn-update {{ margin: 10px; background: #222; color: #00d4ff; border: 1px solid #444; padding: 6px 15px; border-radius: 5px; cursor: pointer; font-size: 10px; font-weight: bold; }}
+            .btn-update {{ margin: 10px; background: #222; color: #00d4ff; border: 1px solid #444; padding: 6px 15px; border-radius: 5px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.3s; }}
+            .btn-update:hover {{ background: #00d4ff; color: #222; }}
             .fridge-exterior {{ padding: 12px; background: #222; border: 3px solid #3d3d3d; border-radius: 8px; }}
             .rack {{ display: grid; grid-template-columns: {grid_template}; gap: 10px; background: #050505; padding: 15px; }}
             .slot {{ width: 38px; height: 38px; border-radius: 50%; background: #111; display: flex; align-items: center; justify-content: center; font-size: 8px; color: white; position: relative; border: 1px solid #333; }}
-            .btl {{ width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.4) 80%); }}
+            .btl {{ width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.4) 80%); transition: transform 0.3s; }}
             .btl::after {{ content: ''; width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.1); }}
+            
+            /* Style Pulse pour la mise en surbrillance */
+            .highlight {{ 
+                box-shadow: 0 0 15px 5px #00d4ff; 
+                border: 2px solid white !important;
+                animation: pulse 1.5s infinite;
+                z-index: 10;
+            }}
+            @keyframes pulse {{
+                0% {{ transform: scale(1); }}
+                50% {{ transform: scale(1.15); }}
+                100% {{ transform: scale(1); }}
+            }}
+
             .btl .tooltip {{ visibility: hidden; width: 140px; background: #000; color: #fff; padding: 8px; border-radius: 4px; position: absolute; z-index: 100; bottom: 125%; left: 50%; margin-left: -70px; opacity: 0; transition: 0.3s; font-size: 10px; border-left: 3px solid #00d4ff; pointer-events: none; }}
             .btl:hover .tooltip {{ visibility: visible; opacity: 1; }}
         </style>
         </head><body>
             <button class="btn-update" onclick="window.location.reload(true);">🔄 ACTUALISER</button>
             <div class="fridge-exterior"><div class='rack'>"""
-
         for l in range(1, lignes + 1):
             for c in range(1, colonnes + 1):
                 cid = f"{l}-{c}"
@@ -82,6 +103,20 @@ def generate():
                 
                 if v_plan and v_plan != "none":
                     c_recherche = slugify(v_plan)
+                    
+                    # --- LOGIQUE DE SURBRILLANCE CORRIGÉE ---
+                    is_highlight = ""
+                    if vin_a_surligner:
+                        # On retire les parenthèses pour la comparaison
+                        vin_clean = vin_a_surligner.replace("(", "").replace(")", "").strip()
+                        plan_clean = c_recherche.replace("(", "").replace(")", "").strip()
+                        
+                        # Test de correspondance croisée (A dans B ou B dans A)
+                        if vin_clean in plan_clean or plan_clean in vin_clean:
+                            is_highlight = " highlight"
+                            # Garde ce print pour confirmer dans les logs
+                            print(f"!!! MATCH TROUVÉ : '{vin_clean}' correspond à '{plan_clean}'")
+
                     couleur_brute = mapping_couleurs.get(c_recherche, "rouge")
                     
                     # Logique de couleur hexadécimale
@@ -90,7 +125,8 @@ def generate():
                     elif "rose" in couleur_brute: h_color = "#ff85a2" # Rose
                     
                     v_clean = v_plan.replace("'", "&apos;")
-                    html += f"""<div class="slot"><div class="btl" style="background-color:{h_color}"><span class="tooltip"><b>{v_clean}</b></span></div></div>"""
+                    # On injecte la classe {is_highlight} ici
+                    html += f"""<div class="slot"><div class="btl{is_highlight}" style="background-color:{h_color}"><span class="tooltip"><b>{v_clean}</b></span></div></div>"""
                 else:
                     html += f"""<div class="slot">{cid}</div>"""
 
