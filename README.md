@@ -30,7 +30,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 
 * **UPDATE 4** : Un module de conseil d'opportunité d'achat par l'IA a été ajouté : l'utilisateur entre les références d'un vin qu'il voit en magasin ou catalogue, et le sommelier IA sonde la cave pour analyser si ce vin fait doublon avec un autre en termes de style. Un millésime et un prix à viser sont conseillés, et l'achat est validé ou non.
 
-* **UPDATE 5** : 1) Le module de conseil d'achat et d'opportunité conseillent maintenant un nombre de bouteilles à acheter de chaque vin proposé ou validé pour améliorer l'équilibre de la cave. 2) Le module d'accords mets et vins indique maintenant par une mise en surbrillance dans le frontend de visualisation de la cave les bouteilles conseillées, afin de permettre à l'utilisateur de les trouver facilement dans la cave physique.
+* **UPDATE 5** : 1) Les modules de conseils d'achat et d'opportunité conseillent maintenant un nombre de bouteilles à acheter de chaque vin proposé ou validé pour améliorer l'équilibre de la cave. 2) Le module d'accords mets et vins indique maintenant par une mise en surbrillance dans le frontend de visualisation de la cave les bouteilles conseillées, afin de permettre à l'utilisateur de les trouver facilement dans la cave physique.
 
 ## 🛠 Prérequis
 
