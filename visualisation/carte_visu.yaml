@@ -71,6 +71,8 @@ cards:
         name: Mode d'affichage
       - entity: input_number.cave_nb_lignes
       - entity: input_number.cave_nb_colonnes
+      - entity: input_text.cave_positions_clayettes
+
   - type: horizontal-stack
     cards:
       - type: button
