@@ -9,6 +9,7 @@ URL_BASE = "http://localhost:8123/api/states/"
 PATH_PLAN = "/config/cave_plan.json"
 PATH_HTML = "/config/www/cave/mon_casier.html"
 ENTITY_HIGHLIGHT = "input_text.v2_vin_highlight"
+ENTITY_CLAYETTES = "input_text.cave_positions_clayettes"
 
 def slugify(text):
     """ Normalise le texte pour garantir la correspondance (accents, espaces, casse) """
@@ -31,22 +32,30 @@ def get_ha_state(entity_id):
 
 def generate():
     try:
-        # 1. Extraction des données (Sensor, Dimensions et Highlight)
+        # 1. Extraction des données (Sensor, Dimensions, Highlight et Clayettes)
         data_inv = get_ha_state("sensor.cave_a_vin_supersensor")
         data_l = get_ha_state("input_number.cave_nb_lignes")
         data_c = get_ha_state("input_number.cave_nb_colonnes")
         data_h = get_ha_state(ENTITY_HIGHLIGHT)
+        data_clayettes = get_ha_state(ENTITY_CLAYETTES)
         
         if not data_inv: return
 
         lignes = int(float(data_l['state'])) if data_l else 10
         colonnes = int(float(data_c['state'])) if data_c else 6
         
-        # Identification du vin à mettre en évidence (slugifié)
+        # Récupération dynamique des positions des clayettes
+        lignes_clayette = []
+        if data_clayettes and data_clayettes['state'] not in ['unknown', 'none', '']:
+            try:
+                # On nettoie la chaîne (espaces) et on convertit en liste d'entiers
+                lignes_clayette = [int(x.strip()) for x in data_clayettes['state'].split(',') if x.strip().isdigit()]
+            except Exception as e:
+                print(f"Erreur format clayettes : {e}")
+
+        # Identification du vin à mettre en évidence
         vin_a_surligner = slugify(data_h['state']) if data_h and data_h['state'] not in ['unknown', 'none', ''] else None
 
-        print(f"DEBUG: Vin à surligner reçu : '{vin_a_surligner}'")
-        
         # 2. Construction du dictionnaire de couleurs
         mapping_couleurs = {}
         vins_dict = data_inv.get('attributes', {}).get('vins', {})
@@ -54,7 +63,6 @@ def generate():
             nom = info.get('nom', {}).get('valeur', '')
             annee = info.get('annee', {}).get('valeur', '')
             coul = str(info.get('couleur', {}).get('valeur', 'rouge')).lower()
-            
             cle = slugify(f"{nom} {annee}")
             mapping_couleurs[cle] = coul
 
@@ -77,7 +85,16 @@ def generate():
             .btl {{ width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.4) 80%); transition: transform 0.3s; }}
             .btl::after {{ content: ''; width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.1); }}
             
-            /* Style Pulse pour la mise en surbrillance */
+            .clayette-bois {{
+                grid-column: 1 / -1;
+                height: 10px;
+                background: linear-gradient(to bottom, #8d6e63 0%, #4e342e 100%);
+                margin: 5px 0 5px 0;
+                border-radius: 3px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+                border-bottom: 2px solid #3e2723;
+            }}
+
             .highlight {{ 
                 box-shadow: 0 0 15px 5px #00d4ff; 
                 border: 2px solid white !important;
@@ -96,6 +113,7 @@ def generate():
         </head><body>
             <button class="btn-update" onclick="window.location.reload(true);">🔄 ACTUALISER</button>
             <div class="fridge-exterior"><div class='rack'>"""
+
         for l in range(1, lignes + 1):
             for c in range(1, colonnes + 1):
                 cid = f"{l}-{c}"
@@ -103,38 +121,32 @@ def generate():
                 
                 if v_plan and v_plan != "none":
                     c_recherche = slugify(v_plan)
-                    
-                    # --- LOGIQUE DE SURBRILLANCE CORRIGÉE ---
                     is_highlight = ""
                     if vin_a_surligner:
-                        # On retire les parenthèses pour la comparaison
                         vin_clean = vin_a_surligner.replace("(", "").replace(")", "").strip()
                         plan_clean = c_recherche.replace("(", "").replace(")", "").strip()
-                        
-                        # Test de correspondance croisée (A dans B ou B dans A)
                         if vin_clean in plan_clean or plan_clean in vin_clean:
                             is_highlight = " highlight"
-                            # Garde ce print pour confirmer dans les logs
-                            print(f"!!! MATCH TROUVÉ : '{vin_clean}' correspond à '{plan_clean}'")
 
                     couleur_brute = mapping_couleurs.get(c_recherche, "rouge")
-                    
-                    # Logique de couleur hexadécimale
-                    h_color = "#8b0000" # Rouge
-                    if "blanc" in couleur_brute: h_color = "#f4e07d" # Or
-                    elif "rose" in couleur_brute: h_color = "#ff85a2" # Rose
+                    h_color = "#8b0000" 
+                    if "blanc" in couleur_brute: h_color = "#f4e07d" 
+                    elif "rose" in couleur_brute: h_color = "#ff85a2" 
                     
                     v_clean = v_plan.replace("'", "&apos;")
-                    # On injecte la classe {is_highlight} ici
                     html += f"""<div class="slot"><div class="btl{is_highlight}" style="background-color:{h_color}"><span class="tooltip"><b>{v_clean}</b></span></div></div>"""
                 else:
                     html += f"""<div class="slot">{cid}</div>"""
+            
+            # Injection dynamique de la clayette
+            if l in lignes_clayette:
+                html += '<div class="clayette-bois"></div>'
 
         html += "</div></div></body></html>"
         
         with open(PATH_HTML, 'w', encoding='utf-8') as f:
             f.write(html)
-        print("Génération réussie.")
+        print(f"Génération réussie. Clayettes aux lignes: {lignes_clayette}")
 
     except Exception as e:
         print(f"Erreur : {e}")
