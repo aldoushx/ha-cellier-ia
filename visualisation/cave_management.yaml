@@ -1,7 +1,12 @@
 # ----------------------------------------------------------------      
 # PACKAGE : GESTION DE LA CAVE À VIN (VERSION ANALYSE STOCK)
 # ----------------------------------------------------------------      
-
+input_text:
+  cave_positions_clayettes:
+    name: "Positions des clayettes (lignes)"
+    initial: "4, 8, 11, 13"
+    icon: mdi:format-list-numbered
+    
 input_number:
   cave_nb_lignes:
     name: "Nombre de Lignes"
