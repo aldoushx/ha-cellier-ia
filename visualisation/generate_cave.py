@@ -44,16 +44,14 @@ def generate():
         lignes = int(float(data_l['state'])) if data_l else 10
         colonnes = int(float(data_c['state'])) if data_c else 6
         
-        # Récupération dynamique des positions des clayettes
+        # Récupération des positions des clayettes depuis l'input_text
         lignes_clayette = []
         if data_clayettes and data_clayettes['state'] not in ['unknown', 'none', '']:
             try:
-                # On nettoie la chaîne (espaces) et on convertit en liste d'entiers
                 lignes_clayette = [int(x.strip()) for x in data_clayettes['state'].split(',') if x.strip().isdigit()]
             except Exception as e:
                 print(f"Erreur format clayettes : {e}")
 
-        # Identification du vin à mettre en évidence
         vin_a_surligner = slugify(data_h['state']) if data_h and data_h['state'] not in ['unknown', 'none', ''] else None
 
         # 2. Construction du dictionnaire de couleurs
@@ -85,14 +83,13 @@ def generate():
             .btl {{ width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.4) 80%); transition: transform 0.3s; }}
             .btl::after {{ content: ''; width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.1); }}
             
+            /* Ajout simple de la clayette sans ombre */
             .clayette-bois {{
                 grid-column: 1 / -1;
-                height: 10px;
-                background: linear-gradient(to bottom, #8d6e63 0%, #4e342e 100%);
-                margin: 5px 0 5px 0;
-                border-radius: 3px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.6);
-                border-bottom: 2px solid #3e2723;
+                height: 8px;
+                background: #5d4037;
+                margin: 2px 0 8px 0;
+                border-radius: 2px;
             }}
 
             .highlight {{ 
@@ -138,7 +135,7 @@ def generate():
                 else:
                     html += f"""<div class="slot">{cid}</div>"""
             
-            # Injection dynamique de la clayette
+            # Injection de la clayette si la ligne est dans la liste
             if l in lignes_clayette:
                 html += '<div class="clayette-bois"></div>'
 
@@ -146,7 +143,7 @@ def generate():
         
         with open(PATH_HTML, 'w', encoding='utf-8') as f:
             f.write(html)
-        print(f"Génération réussie. Clayettes aux lignes: {lignes_clayette}")
+        print(f"Génération terminée. Clayettes lignes : {lignes_clayette}")
 
     except Exception as e:
         print(f"Erreur : {e}")
