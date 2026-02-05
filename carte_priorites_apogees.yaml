@@ -21,5 +21,4 @@ content: >
       {%- else -%}
         {{ item.nom }} ({{ item.annee }}) - Apogée {{ item.apogee }}
       {%- endif %}
-  {% endif -%} {%- endfor -
-  %}
+  {% endif -%} {%- endfor -%}
