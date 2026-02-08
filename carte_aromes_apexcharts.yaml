@@ -1,0 +1,71 @@
+type: vertical-stack
+cards:
+  - type: custom:apexcharts-card
+    graph_span: 1d
+    header:
+      show: true
+      title: Signature Aromatique
+      show_states: false
+    series:
+      - entity: sensor.vin_selectionne_profil
+        name: Intensité
+        type: column
+        color: "#e74c3c"
+        data_generator: >
+          let attr = entity.attributes.profil_aromatique || "";
+
+          /* On remplace Agrumes par Fruité pour qu'il soit comptabilisé */ attr
+          = attr.replace(/Agrumes/i, "Fruité");
+
+          const familles = ['Fruité', 'Floral', 'Végétal', 'Minéral', 'Épicé',
+          'Boisé', 'Grillé', 'Animal', 'Lacté', 'Terreux', 'Tertiaire'];
+
+          return familles.map(f => {
+            /* La regex cherche maintenant le nom de la famille UNIQUEMENT en début de segment (début de ligne ou après une virgule) */
+            /* Cela évite de matcher "boise" dans "framboise" qui est à l'intérieur des parenthèses */
+            const regex = new RegExp("(?:^|,\\s*)" + f + ".*?(\\d+)", "i");
+            const match = attr.match(regex);
+            return {
+              x: f,
+              y: match ? parseInt(match[1]) : 0
+            };
+          });
+    apex_config:
+      chart:
+        type: bar
+        height: 300
+        toolbar:
+          show: false
+      plotOptions:
+        bar:
+          columnWidth: 70%
+          borderRadius: 4
+          dataLabels:
+            position: top
+      dataLabels:
+        enabled: true
+        formatter: |
+          EVAL:function(val) { return val > 0 ? val + "%" : ""; }
+        style:
+          fontSize: 10px
+          colors:
+            - "#304758"
+      xaxis:
+        type: category
+        labels:
+          rotate: -45
+          rotateAlways: true
+          style:
+            fontSize: 11px
+      yaxis:
+        min: 0
+        max: 100
+        tickAmount: 5
+        title:
+          text: Pourcentage (%)
+      grid:
+        borderColor: "#e8e8e8"
+  - type: entities
+    entities:
+      - entity: input_select.selection_vin_suppression
+        name: Sélectionner un vin
