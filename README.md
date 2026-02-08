@@ -23,6 +23,8 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * **Statistiques** : Calcul automatique du nombre total de bouteilles en stock et de la valeur estimée de la cave.
 
 * **UPDATE 1** : Facultatif - Un module de visualisation et rangement de cave a été ajouté, ce n'est que du frontend, indépendant du package précédent (hormis les données qu'il récupère du supersensor en lecture). Voir dans la partie BONUS plus bas son fonctionnement et son installation. **Update** : Ajout d'un champs texte pour positionner des clayettes.
+<img width="520" height="425" alt="image" src="https://github.com/user-attachments/assets/29d67892-e17b-425f-91ab-df86b6e43771" />
+
 
 * **UPDATE 2** : Un module de conseil d'accord mets et vins par l'IA a été ajouté, qui propose en fonction du repas entré dans un champs texte, le vin le plus pertinent de votre cave, en tenant compte de sa maturité et de son profil. Une explication du choix et des conseils de service sont proposés. Une carte du top 5 des priorités à boire est également fournie sur la base de leur année d'apogée.
 
@@ -33,6 +35,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * **UPDATE 5** : 1) Les modules de conseils d'achat et d'opportunité conseillent maintenant un nombre de bouteilles à acheter de chaque vin proposé ou validé pour améliorer l'équilibre de la cave. 2) Le module d'accords mets et vins indique maintenant par une mise en surbrillance dans le frontend de visualisation de la cave les bouteilles conseillées, afin de permettre à l'utilisateur de les trouver facilement dans la cave physique.
 
 * **UPDATE 6** : 1) Ajout dans le prompt d'inventaire pour chaque fiche de vin des aromes associés et des accords mets / vins généraux. Pour cet update, le supersensor se voit ajouter des attributs supplémentaires, donc il faut soit recommencer son inventaire à 0, soit ajouter à la main (ou avec Gemini qui fait ça très bien...) pour chaque entrée les attributs supplémentaires. La carte du dashboard d'inventaire a été mise à jour pour intégrer ces infos supplémentaires. 2) Pour les utilisateurs d'apex charts, ajout d'une carte d'histogrammes d'arômes avec liste déroulante.
+<img width="698" height="380" alt="image" src="https://github.com/user-attachments/assets/9b5b5576-8c8f-425a-b01d-fac8b35adee1" />
 
 ## 🛠 Prérequis
 
@@ -99,7 +102,7 @@ Pour la carte de l'histogramme des arômes `carte_aromes_apexcharts.yaml`, insta
 
 # BONUS FRONTEND (facultatif et à améliorer) : Visualisation de la cave à vin et rangement
 
-<img width="725" height="580" alt="image" src="https://github.com/user-attachments/assets/6f794bbb-56c6-4faa-93e2-37d1c2b1f19a" />
+<img width="520" height="425" alt="image" src="https://github.com/user-attachments/assets/29d67892-e17b-425f-91ab-df86b6e43771" />
 
 
 J'ai ajouté une interface de visualisation et de rangement de la cave en lien avec le stock de bouteilles de la première page, qui permet de configurer la taille de sa cave et d'y ranger les bouteilles selon leur position physique réelle. Le module d'accords mets et vins signale par une surbrillance les bouteilles qu'il conseille dans ce frontend.
