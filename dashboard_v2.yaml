@@ -31,13 +31,15 @@ views:
             #### {{ dot }} {{ apo_icon }} **{{ info.nom.valeur }} ({{ info.annee.valeur }})**
             **Stock : {{ info.nombre_bouteilles | default(0) }} bouteille(s)**
             
-            * {{ get_status(info.note.confiance) }} **Note :**  {{ info.note.valeur | default('N/A') }}
+            * {{ get_status(info.note.confiance) }} **Note :** {{ info.note.valeur | default('N/A') }}
             * {{ get_status(info.prix_moyen.confiance) }} **Prix :** {{ info.prix_moyen.valeur | default('-') }} €
             * {{ get_status(info.apogee.confiance) }} **Apogée :** {{ info.apogee.valeur | default('-') }}
             * {{ get_status(info.garde_conseillee.confiance) }} **Garde :** {{ info.garde_conseillee.valeur | default('-') }}
             
             *Appellation : {{ info.appellation.valeur | default('-') }} | {{ info.provenance.valeur | default('-') }}*
-            <br><small>Cépages : {{ info.cepages.valeur | default('-') }}</small>
+            <br><small>Profil : {{ info.profil_aromatique.valeur | default('-') }}</small>
+            <small>Cépages : {{ info.cepages.valeur | default('-') }}</small>
+            <small>Accords : {{ info.accords_mets.valeur | default('-') }}</small>
             
             {% endfor %}
           {% else %}
@@ -235,3 +237,4 @@ views:
           - condition: state
             entity: input_boolean.afficher_gestion_cave
             state: 'on'
+
