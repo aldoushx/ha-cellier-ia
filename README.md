@@ -8,7 +8,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * **Fiches techniques exhaustives** :
     * **Identité** : Nom exact, Millésime, Couleur, Appellation, Provenance (Région/Pays), Cépages.
     * **Conservation** : Garde conseillée, Année d'apogée, Date limite de consommation, Fenêtre de dégustation.
-    * **Expertise** : Note moyenne (avec sources) et Prix moyen constaté.
+    * **Expertise** : Note moyenne (avec sources) et Prix moyen constaté, profil arômatique, accord mets/vin
 * **Indicateurs de Confiance** : Chaque donnée affiche par des icones un score de fiabilité lié à la crédibilité des données obtenues par l'IA:
     * ✅ : Très haute (>95%)
     * 🟢 : Haute (>90%)
@@ -22,7 +22,7 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * **Gestion de Stock** : Ajout en un clic depuis la recherche, boutons +1 / -1 et suppression simplifiée.
 * **Statistiques** : Calcul automatique du nombre total de bouteilles en stock et de la valeur estimée de la cave.
 
-* **UPDATE 1** : Facultatif - Un module de visualisation et rangement de cave a été ajouté, ce n'est que du frontend, indépendant du package précédent (hormis les données qu'il récupère du supersensor en lecture). Voir dans la partie BONUS plus bas son fonctionnement et son installation.
+* **UPDATE 1** : Facultatif - Un module de visualisation et rangement de cave a été ajouté, ce n'est que du frontend, indépendant du package précédent (hormis les données qu'il récupère du supersensor en lecture). Voir dans la partie BONUS plus bas son fonctionnement et son installation. **Update** : Ajout d'un champs texte pour positionner des clayettes.
 
 * **UPDATE 2** : Un module de conseil d'accord mets et vins par l'IA a été ajouté, qui propose en fonction du repas entré dans un champs texte, le vin le plus pertinent de votre cave, en tenant compte de sa maturité et de son profil. Une explication du choix et des conseils de service sont proposés. Une carte du top 5 des priorités à boire est également fournie sur la base de leur année d'apogée.
 
@@ -31,6 +31,8 @@ Ce projet transforme votre instance Home Assistant en un gestionnaire de cave in
 * **UPDATE 4** : Un module de conseil d'opportunité d'achat par l'IA a été ajouté : l'utilisateur entre les références d'un vin qu'il voit en magasin ou catalogue, et le sommelier IA sonde la cave pour analyser si ce vin fait doublon avec un autre en termes de style. Un millésime et un prix à viser sont conseillés, et l'achat est validé ou non.
 
 * **UPDATE 5** : 1) Les modules de conseils d'achat et d'opportunité conseillent maintenant un nombre de bouteilles à acheter de chaque vin proposé ou validé pour améliorer l'équilibre de la cave. 2) Le module d'accords mets et vins indique maintenant par une mise en surbrillance dans le frontend de visualisation de la cave les bouteilles conseillées, afin de permettre à l'utilisateur de les trouver facilement dans la cave physique.
+
+* **UPDATE 6** : 1) Ajout dans le prompt d'inventaire pour chaque fiche de vin des aromes associés et des accords mets / vins généraux. Pour cet update, le supersensor se voit ajouter des attributs supplémentaires, donc il faut soit recommencer son inventaire à 0, soit ajouter à la main (ou avec Gemini qui fait ça très bien...) pour chaque entrée les attributs supplémentaires. La carte du dashboard d'inventaire a été mise à jour pour intégrer ces infos supplémentaires. 2) Pour les utilisateurs d'apex charts, ajout d'une carte d'histogrammes d'arômes avec liste déroulante.
 
 ## 🛠 Prérequis
 
