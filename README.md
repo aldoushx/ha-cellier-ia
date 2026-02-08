@@ -84,6 +84,8 @@ Pour la partie Accords mets et vins et Conseil d'achat, le package `gestion_cave
 
 Ensuite, copiez le contenu des 4 fichiers cartes (`carte_priorites_apogees.yaml`, `carte_conseil_sommelier.yaml`, `carte_conseil_achats.yaml`, `carte_conseil_opportunite.yaml`) dans 4 cartes différentes de votre dashboard de cave (copier/coller le contenu dans 4 cartes manuelles, ce sont des piles verticales).
 
+Pour la carte de l'histogramme des arômes `carte_aromes_apexcharts.yaml`, installez au préalable le module HACS apex charts card.
+
 
 ## 📖 Utilisation
 
