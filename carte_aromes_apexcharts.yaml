@@ -14,15 +14,13 @@ cards:
         data_generator: >
           let attr = entity.attributes.profil_aromatique || "";
 
-          /* On remplace Agrumes par Fruité pour qu'il soit comptabilisé */ attr
+          /* Agrumes comptabilisé Fruité */ attr
           = attr.replace(/Agrumes/i, "Fruité");
 
           const familles = ['Fruité', 'Floral', 'Végétal', 'Minéral', 'Épicé',
           'Boisé', 'Grillé', 'Animal', 'Lacté', 'Terreux', 'Tertiaire'];
 
           return familles.map(f => {
-            /* La regex cherche maintenant le nom de la famille UNIQUEMENT en début de segment (début de ligne ou après une virgule) */
-            /* Cela évite de matcher "boise" dans "framboise" qui est à l'intérieur des parenthèses */
             const regex = new RegExp("(?:^|,\\s*)" + f + ".*?(\\d+)", "i");
             const match = attr.match(regex);
             return {
