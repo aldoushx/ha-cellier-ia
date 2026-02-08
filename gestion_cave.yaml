@@ -2,21 +2,26 @@
 input_text:
   v2_recherche_nom:
     name: "Nom du Vin"
+    max: 255
   v2_recherche_couleur:
     name: "Couleur"
   v2_recherche_annee:
     name: "Année"
   derniere_erreur_gemini:
     name: "Dernière Erreur Gemini"
+    max: 255
   v2_plat_du_jour:
     name: "Plat à accompagner"
     icon: mdi:silverware-fork-knife
+    max: 255
   v2_vin_convoite:
     name: "Vin à tester"
     icon: mdi:cart-search
+    max: 255
   v2_vin_highlight:
     name: "Vin identifié par l'IA"
     icon: mdi:target
+    max: 255
 
 input_number:
   v2_budget_max_achat:
@@ -158,6 +163,12 @@ template:
           prix_moyen: >
             {{ trigger.event.data.prix_moyen | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.prix_moyen is defined) 
                else '{"valeur": "-", "confiance": "0%"}' }}
+          profil_aromatique: >
+            {{ trigger.event.data.profil_aromatique | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.profil_aromatique is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
+          accords_mets: >
+            {{ trigger.event.data.accords_mets | to_json if (trigger is defined and trigger.event.data is defined and trigger.event.data.accords_mets is defined) 
+               else '{"valeur": "-", "confiance": "0%"}' }}
 
   - trigger:
       - platform: event
@@ -217,7 +228,23 @@ template:
         state: "Prêt"
         attributes:
           reponse: "{{ trigger.event.data.reponse }}"
-          
+  - sensor:
+    - name: "Vin Selectionne Profil"
+      unique_id: vin_selectionne_profil
+      state: >
+        {% set selection = states('input_select.selection_vin_suppression') %}
+        {{ selection.split(' | ')[1] if ' | ' in selection else 'Aucun vin' }}
+      attributes:
+        profil_aromatique: >
+          {% set selection = states('input_select.selection_vin_suppression') %}
+          {% set entry_id = selection.split(' | ')[0] if ' | ' in selection else '' %}
+          {% set cave = state_attr('sensor.cave_a_vin_supersensor', 'vins') %}
+          {% if cave is mapping and entry_id in cave %}
+            {{ cave[entry_id].profil_aromatique.valeur }}
+          {% else %}
+            "N/A 0%"
+          {% endif %}
+
 automation:
   - alias: "IA - Recherche Vin Expert V2"
     id: ia_recherche_vin_expert_v2
@@ -237,7 +264,10 @@ automation:
           instructions: >-
             Agis comme un sommelier expert. Ta réponse doit être uniquement un dictionnaire JSON pur.
             Analyse : {{ states('input_text.v2_recherche_nom') }}, {{ states('input_text.v2_recherche_couleur') }}, {{ states('input_text.v2_recherche_annee') }}.
-            STRUCTURE : {"nom": {"valeur": "...", "confiance": "100%"}, "annee": {"valeur": 2018, "confiance": "100%"}, "couleur": {"valeur": "...", "confiance": "100%"}, "cepages": {"valeur": "...", "confiance": "95%"}, "note_moyenne": {"valeur": "...", "sites consultes": "...", "confiance": "98%"}, "appellation": {"valeur": "...", "confiance": "100%"}, "provenance": {"valeur": "...", "confiance": "100%"}, "garde_conseillee": {"valeur": "...", "confiance": "90%"}, "fenetre_consommation": {"valeur": "...", "confiance": "90%"}, "apogee": {"valeur": 2029, "confiance": "85%"}, "date_limite": {"valeur": "...", "confiance": "85%"}, "prix_moyen": {"valeur": "35", "magasins sources": "...", "confiance": "95%"}}
+            IMPORTANT : 
+            1. Profil aromatique : utilise le format "Famille (Détail) X%" (Total 100%).
+            2. Accords Mets : Utilise exclusivement des mots-clés simples séparés par des virgules dans cette liste : [Viande rouge, Viande blanche, Poisson, Fruits de mer, Plats en sauce, Grillades, Fromages, Desserts chocolat, Desserts fruités, Apéritif].
+            STRUCTURE : {"nom": {"valeur": "...", "confiance": "100%"}, "annee": {"valeur": 2018, "confiance": "100%"}, "couleur": {"valeur": "...", "confiance": "100%"}, "cepages": {"valeur": "...", "confiance": "95%"}, "note_moyenne": {"valeur": "...", "sites consultes": "...", "confiance": "98%"}, "appellation": {"valeur": "...", "confiance": "100%"}, "provenance": {"valeur": "...", "confiance": "100%"}, "garde_conseillee": {"valeur": "...", "confiance": "90%"}, "apogee": {"valeur": 2029, "confiance": "85%"}, "prix_moyen": {"valeur": "35", "magasins sources": "...", "confiance": "95%"}, "profil_aromatique": {"valeur": "Fruité (Cerise) 70%, Boisé (Chêne) 30%", "confiance": "90%"}, "accords_mets": {"valeur": "Viande rouge, Fromages", "confiance": "90%"}}
         response_variable: gemini_result
       - if:
           - condition: template
@@ -269,15 +299,9 @@ automation:
               garde_conseillee: >
                 {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
                 {{ (clean | from_json).garde_conseillee }}
-              fenetre_consommation: >
-                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
-                {{ (clean | from_json).fenetre_consommation }}
               apogee: >
                 {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
                 {{ (clean | from_json).apogee }}
-              date_limite: >
-                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
-                {{ (clean | from_json).date_limite }}
               prix_moyen:
                 valeur: >
                   {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
@@ -289,6 +313,12 @@ automation:
                 confiance: >
                   {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
                   {{ (clean | from_json).prix_moyen.confiance }}
+              profil_aromatique: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).profil_aromatique }}
+              accords_mets: >
+                {% set clean = gemini_result.data | replace('```json', '') | replace('```', '') | trim %}
+                {{ (clean | from_json).accords_mets }}
         else:
           - action: input_boolean.turn_on
             target: { entity_id: input_boolean.ia_erreur }
@@ -341,6 +371,8 @@ automation:
               'garde_conseillee': s.garde_conseillee | from_json if s.garde_conseillee is string else s.garde_conseillee,
               'apogee': s.apogee | from_json if s.apogee is string else s.apogee,
               'prix_moyen': s.prix_moyen | from_json if s.prix_moyen is string else s.prix_moyen,
+              'profil_aromatique': s.profil_aromatique | from_json if s.profil_aromatique is string else s.profil_aromatique,
+              'accords_mets': s.accords_mets | from_json if s.accords_mets is string else s.accords_mets,
               'nombre_bouteilles': 1
             } %}
             {{ dict(current_vins, **{entry_id: new_wine}) }}
@@ -434,7 +466,6 @@ automation:
             data:
               option: "Aucun vin"
 
-
   - alias: "IA - Accord Mets Expert V2"
     id: ia_accord_mets_expert_v2
     mode: restart
@@ -459,7 +490,6 @@ automation:
               - {{ info.nom.valeur }} ({{ info.annee.valeur }}), {{ info.appellation.valeur }}, Apogée: {{ info.apogee.valeur }}
             {%- endfor %}
             ANALYSE POUR LE PLAT : "{{ states('input_text.v2_plat_du_jour') }}"
-            ANNÉE ACTUELLE : {{ now().year }}
             STRUCTURE : {"choix": "Nom + Année", "raison": "Explication détaillée", "service": "Carafe/Température"}
         response_variable: accord_result
       - if:
@@ -468,23 +498,14 @@ automation:
         then:
           - variables:
               res: "{{ accord_result.data | replace('```json', '') | replace('```', '') | trim | from_json }}"
-          
-          # 1. Mise à jour de l'entité de surbrillance (déclenchera la visu si présente)
           - action: input_text.set_value
             target:
               entity_id: input_text.v2_vin_highlight
             data:
               value: "{{ res.choix }}"
-
-          # 2. Envoi de l'événement pour les capteurs de texte
           - event: EVENT_ACCORD_IA_REUSSI
             event_data:
               reponse: "{{ res.choix }} : {{ res.raison }} ({{ res.service }})"
-              
-        else:
-          - action: input_boolean.turn_on
-            target: { entity_id: input_boolean.ia_erreur }
-            
       - action: input_boolean.turn_off
         target: { entity_id: input_boolean.ia_en_cours }
 
@@ -567,7 +588,7 @@ automation:
               "pertinence": "Doublon ou manque ? (court)",
               "prix_conseille": "X € (basé sur [source])",
               "millesime_vise": "Année + raison stratégique",
-              "verdict": "ACHAT VALIDÉ ou DÉCONSEILLÉ + raison + nombre de bouteilles a viser
+              "verdict": "ACHAT VALIDÉ ou DÉCONSEILLÉ + raison + nombre de bouteilles a viser"
             }
         response_variable: opportunite_result
       - if:
