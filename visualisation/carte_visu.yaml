@@ -82,7 +82,7 @@ cards:
           action: call-service
           service: automation.trigger
           target:
-            entity_id: automation.cave_sync_liste_vins
+            entity_id: automation.cave_sync_liste_vins_2
       - type: button
         name: Forcer Visuel
         icon: mdi:refresh
